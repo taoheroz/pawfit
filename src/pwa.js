@@ -36,3 +36,6 @@ export async function promptInstall() {
 
 // The app's home link. LINE opens links carrying openExternalBrowser=1 straight in Safari/Chrome instead of its own browser.
 export const externalLink = () => `${location.origin}${import.meta.env.BASE_URL}?openExternalBrowser=1`;
+
+// Which browser on iPhone/iPad: Chrome, Firefox and Edge put the share button in a different place from Safari.
+export const iosBrowser = () => { const u = navigator.userAgent; return /CriOS/.test(u) ? 'Chrome' : /FxiOS/.test(u) ? 'Firefox' : /EdgiOS/.test(u) ? 'Edge' : 'Safari'; };

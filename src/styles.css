@@ -403,3 +403,6 @@ label.btn{cursor:pointer}
 body:has(.ob:not([hidden])) .scrim{z-index:71}
 body:has(.ob:not([hidden])) .sheet{z-index:72}
 body:has(.ob:not([hidden])) .toast{z-index:80}
+.iosbar.top{justify-content:flex-start;gap:10px;padding:0 6px 0 14px;margin:6px 8px 26px}
+.iosbar.top .url{flex:1;font-size:13px;color:var(--muted);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.iosbar.top .arrow{top:auto;bottom:-24px;left:auto;right:53px}
