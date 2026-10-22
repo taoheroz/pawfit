@@ -149,7 +149,8 @@ POSE.wallpush=POSE.pushup; POSE.walk=[POSE.march[0],POSE.march[1],1500];
 const SEGS=[[1,2,0],[2,3,0],[3,4,0],[2,5,1],[5,6,1],[1,7,0],[7,8,0],[1,9,1],[9,10,1],[0,1,0]];
 const FIGFILE={squat:'ex_squat',pushup:'ex_pushup',wallpush:'ex_wall_pushup',row:'ex_row',bridge:'ex_bridge',plank:'ex_plank',rdl:'ex_rdl',lunge:'ex_lunge',press:'ex_press',superman:'ex_superman',deadbug:'ex_deadbug',march:'ex_march',walk:'ex_walk',stretch:'ex_stretch'};
 function figSVG(k){
-  if(imgSrc(FIGFILE[k])) return `<img class="fig figimg" src="${imgSrc(FIGFILE[k])}" alt="">`;
+  const fk=S.profile.sex==='m'&&imgSrc(FIGFILE[k]+'_male')?FIGFILE[k]+'_male':FIGFILE[k];   /* men see the male figure when it exists */
+  if(imgSrc(fk)) return `<img class="fig figimg" src="${imgSrc(fk)}" alt="">`;
   const p=(POSE[k]||POSE.stretch)[0];
   return `<svg class="fig" viewBox="0 -6 100 84" data-fig="${k}" aria-hidden="true"><line class="floor" x1="6" y1="76.5" x2="94" y2="76.5"/>${SEGS.map(([a,b,f])=>`<line class="b${f?' far':''}" x1="${p[a*2]}" y1="${p[a*2+1]}" x2="${p[b*2]}" y2="${p[b*2+1]}"/>`).join('')}<circle cx="${p[0]}" cy="${p[1]}" r="5.6"/></svg>`;
 }
@@ -690,16 +691,24 @@ function drawOB(){
    <div class="err" id="oErr"></div>
    <div class="obnav"><button class="btn ghost" data-act="ob" data-v="0">ย้อนกลับ</button><button class="btn" data-act="ob1">ถัดไป</button></div>`;
   else if(s===2){
-    const t=OB.t||calcTargets(p); OB.t=t; const wk=p.goal<p.weight?Math.ceil((p.weight-p.goal)/.4):0;
-    const end=new Date();end.setDate(end.getDate()+wk*7);
-    body=`${dots}<div><div class="eyebrow">ขั้นที่ 2 จาก 3</div><h1>นี่คือเป้าของเธอ</h1><p class="muted small">คำนวณให้แล้ว แก้ตัวเลขเองได้ทุกช่อง และแอปจะช่วยปรับให้แม่นขึ้นเมื่อใช้ไป 2–3 สัปดาห์</p></div>
+    const t=OB.t||calcTargets(p); OB.t=t; const floor=p.sex==='m'?1500:1200;
+    body=`${dots}<div><div class="eyebrow">ขั้นที่ 2 จาก 3</div><h1>นี่คือเป้าของเธอ</h1><p class="muted small">คำนวณให้แล้ว ไม่แน่ใจก็กดถัดไปได้เลย แก้ตัวเลขเองได้ทุกช่อง และแอปจะช่วยปรับให้แม่นขึ้นเมื่อใช้ไป 2–3 สัปดาห์</p></div>
      <div class="card explain">
       <div class="row"><span class="tag A" style="width:36px;height:36px">${IC.spark}</span><span>ร่างกายใช้พลังงานราว</span><b class="num">${fmt(t.tdee)}</b></div>
-      <label class="field" for="oK">เป้าแคลต่อวัน (ลดราว 400 เพื่อให้ลด ~0.4 กก./สัปดาห์)<input id="oK" type="number" inputmode="numeric" value="${t.kcal}"></label>
+      <span class="small muted" style="margin-top:-6px">kcal ต่อวัน รวมทั้งตอนพักและตอนขยับตัว ถ้ากินเท่านี้น้ำหนักจะคงที่</span>
+      ${p.goal<p.weight?`<div class="small">อยากลดเร็วแค่ไหน</div><div class="chips" id="oPace"></div>`:''}
+      <label class="field" for="oK">เป้าแคลต่อวัน (kcal)<input id="oK" type="number" inputmode="numeric" value="${t.kcal}"></label>
+      <div id="oGuide" aria-live="polite"></div>
       <label class="field" for="oP">โปรตีนต่อวัน (g) ช่วยรักษากล้ามเนื้อให้หุ่นกระชับ<input id="oP" type="number" inputmode="numeric" value="${t.protein}"></label>
-      <div class="grid2"><label class="field" for="oWa">น้ำ (แก้ว)<input id="oWa" type="number" inputmode="numeric" value="${t.water}"></label><label class="field" for="oWpw">ออกกำลัง (ครั้ง/สัปดาห์)<input id="oWpw" type="number" inputmode="numeric" value="3" min="1" max="7"></label></div>
+      <div class="grid2"><label class="field" for="oWa">น้ำ (แก้ว 250 มล.)<input id="oWa" type="number" inputmode="numeric" value="${t.water}"></label><label class="field" for="oWpw">ออกกำลัง (ครั้ง/สัปดาห์)<input id="oWpw" type="number" inputmode="numeric" value="3" min="1" max="7"></label></div>
+      <details class="howto"><summary>ตัวเลขพวกนี้คิดมาจากไหน?</summary><ol>
+       <li><b>พลังงานที่ใช้ต่อวัน</b> = พลังงานพื้นฐานตอนพัก คิดจากเพศ อายุ ส่วนสูง น้ำหนัก (${fmt(Math.round(bmrOf(p)))} kcal) × ระดับการขยับตัว (×${p.activity}) ≈ ${fmt(t.tdee)} kcal</li>
+       <li><b>เป้าแคล</b> = กินให้น้อยกว่าที่ใช้นิดหน่อย ไขมัน 1 กก. ≈ 7,700 kcal ถ้าขาดวันละ 400 จะลดได้ราว 0.4 กก./สัปดาห์ และไม่ควรต่ำกว่า ${fmt(floor)} kcal</li>
+       <li><b>โปรตีน</b> = น้ำหนัก ${p.weight} กก. × 1.6 g ≈ ${t.protein} g เช่น อกไก่ 100 กรัมได้ราว 23 g ไข่ 1 ฟองราว 6 g</li>
+       <li><b>น้ำ</b> = น้ำหนัก × 33 มล. แล้วแบ่งเป็นแก้วละ 250 มล.</li>
+       <li><b>ออกกำลัง</b> เพิ่งกลับมาเริ่มใหม่ 2–3 ครั้งต่อสัปดาห์ก็พอ แอปนับเป็นครั้ง หยุดไปก็ทำต่อจากเดิมได้</li></ol></details>
      </div>
-     ${wk?`<div class="banner"><span>ถ้าทำตามนี้ จะถึง ${p.goal} กก. ในราว <b>${wk} สัปดาห์</b> (ประมาณ${end.toLocaleDateString('th-TH',{month:'long',year:'numeric'})}) ช้าแต่ไม่เด้งกลับ</span></div>`:''}
+     <div class="banner" id="oEta" hidden></div>
      <div class="err" id="oErr"></div>
      <div class="obnav"><button class="btn ghost" data-act="ob" data-v="1">ย้อนกลับ</button><button class="btn" data-act="ob2">ถัดไป</button></div>`;
   }
@@ -708,6 +717,29 @@ function drawOB(){
    <label class="field" for="oName">ตั้งชื่อน้อง<input id="oName" type="text" maxlength="16" value="${esc(OB.name)}"></label>
    <div class="obnav"><button class="btn ghost" data-act="ob" data-v="2">ย้อนกลับ</button><button class="btn" data-act="obDone">เริ่มเลย</button></div>`;
   el.innerHTML=`<div class="ob-in">${body}</div>`;
+  if(s===2) obGuide();
+}
+/* step 2: turn the kcal box into plain words (kg per week, weeks to goal) while the user edits it */
+const PACE=[[250,'ค่อยเป็นค่อยไป'],[400,'แนะนำ'],[550,'เร็วขึ้นอีกนิด']];
+const paceKcal=(t,p,d)=>Math.max(Math.round((t.tdee-d)/10)*10,p.sex==='m'?1500:1200);
+function obGuide(){
+  const p=OB.p, t=OB.t, kcal=gv('oK'), g=document.getElementById('oGuide'), eta=document.getElementById('oEta'), pace=document.getElementById('oPace');
+  if(!g) return;
+  const lose=p.goal<p.weight, floor=p.sex==='m'?1500:1200, rate=Math.max(0,(t.tdee-kcal)*7/7700);
+  if(pace) pace.innerHTML=PACE.map(([d,l])=>{const k=paceKcal(t,p,d);return `<button type="button" class="chip ${k===kcal?'on':''}" data-act="obPace" data-v="${k}">${l} <span class="num">${fmt(k)}</span></button>`}).join('');
+  let msg='', warn=false;
+  if(!(kcal>0)) msg='ใส่ตัวเลขแคลที่อยากกินต่อวัน';
+  else if(kcal<floor){msg=`ต่ำกว่า ${fmt(floor)} kcal จะหิวจนเลิกกลางทางได้ง่าย และเสียกล้ามเนื้อ ลองขยับขึ้นอีกนิดนะ`;warn=true}
+  else if(!lose) msg=kcal>t.tdee+150?'มากกว่าที่ร่างกายใช้ เหมาะกับคนอยากเพิ่มน้ำหนัก':'ใกล้กับที่ร่างกายใช้ เหมาะกับการรักษาน้ำหนัก';
+  else if(rate<=0) msg='เท่ากับหรือมากกว่าที่ร่างกายใช้ น้ำหนักจะยังไม่ลด';
+  else if(rate>1){msg=`ลดราว ${r1(rate)} กก./สัปดาห์ เร็วเกินไป เสี่ยงเสียกล้ามเนื้อและเด้งกลับ แนะนำ 0.25–0.75 กก.`;warn=true}
+  else if(rate>.75) msg=`ลดราว ${r1(rate)} กก./สัปดาห์ เร็วกว่าที่แนะนำนิดหน่อย ถ้ารู้สึกหิวมากให้เพิ่มแคลขึ้น`;
+  else if(rate>=.25) msg=`ลดราว ${r1(rate)} กก./สัปดาห์ กำลังดี ไม่หิวจนทรมาน`;
+  else msg=`ลดราว ${r1(rate)} กก./สัปดาห์ ช้าหน่อยแต่ทำได้ยาว ๆ`;
+  g.className='small '+(warn?'pace-warn':'muted'); g.textContent=msg;
+  const wk=lose&&rate>0&&kcal>=floor?Math.ceil((p.weight-p.goal)/rate):0;
+  eta.hidden=!wk;
+  if(wk){const end=new Date();end.setDate(end.getDate()+wk*7);eta.innerHTML=`<span>ถ้าทำตามนี้ จะถึง ${p.goal} กก. ในราว <b>${wk} สัปดาห์</b> (ประมาณ${end.toLocaleDateString('th-TH',{month:'long',year:'numeric'})})${rate<=.75?' ช้าแต่ไม่เด้งกลับ':''}</span>`}
 }
 
 /* ================= sheets ================= */
@@ -1101,6 +1133,7 @@ document.addEventListener('click',e=>{
      const k=gv('oK'), err=document.getElementById('oErr');
      if(!(k>=1000)){err.textContent='เป้าแคลอรีควรไม่ต่ำกว่า 1,000 kcal เพื่อความปลอดภัย';break}
      OB.t={...OB.t,kcal:Math.round(k),protein:Math.round(gv('oP'))||OB.t.protein,water:Math.max(1,Math.round(gv('oWa'))||OB.t.water)}; OB.wpw=Math.max(1,Math.min(7,Math.round(gv('oWpw'))||3)); showOB(3); break;}
+   case 'obPace': document.getElementById('oK').value=b.dataset.v; obGuide(); break;
    case 'obSkin': OB.skin=b.dataset.v; OB.name=document.getElementById('oName').value; drawOB(); break;
    case 'obDone':{
      const name=document.getElementById('oName').value.trim()||'ข้าวปั้น';
@@ -1140,6 +1173,7 @@ function petTap(){}
 document.addEventListener('input',e=>{
   const id=e.target.id;
   if(id==='q'&&ADD){ADD.q=e.target.value;drawAdd()}
+  if(id==='oK'&&OB)obGuide();
   if(['pK','pP','pWa'].includes(id))e.target.dataset.touched='1';
   if(['pAge','pH','pW','pG'].includes(id))recalcProfile();
 });

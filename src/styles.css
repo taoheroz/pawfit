@@ -340,6 +340,11 @@ details.card[open]>summary .chev{transform:rotate(180deg)}
 .explain{display:flex;flex-direction:column;gap:10px}
 .explain .row{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;font-size:14px}
 .explain .row b{font-family:var(--f-display);font-weight:500;font-size:18px}
+.pace-warn{color:var(--warn);font-weight:600}
+#oPace{flex-wrap:wrap}
+.howto>summary{cursor:pointer;font-size:14px;color:var(--leaf);font-weight:600;min-height:28px;display:flex;align-items:center}
+.howto ol{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.55;color:var(--muted)}
+.howto ol b{color:var(--ink,inherit);font-weight:600}
 .skins{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 .skin{border-radius:18px;background:var(--surface);box-shadow:var(--sh-1);padding:6px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:14px;transition:transform .15s}
 .skin:active{transform:scale(.97)}
