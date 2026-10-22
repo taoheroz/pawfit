@@ -397,8 +397,6 @@ label.btn{cursor:pointer}
 @keyframes nudge{50%{transform:translateY(5px)}}
 @keyframes pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--leaf) 35%,transparent)}}
 @media (prefers-reduced-motion:reduce){.iosbar .hl,.iosbar .arrow{animation:none}}
-.obinstall{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:18px;background:var(--leaf-soft);text-align:center}
-.obinstall p{margin:0}
 /* sheets opened from the welcome screen must sit above it */
 body:has(.ob:not([hidden])) .scrim{z-index:71}
 body:has(.ob:not([hidden])) .sheet{z-index:72}
@@ -443,3 +441,7 @@ body:has(.ob:not([hidden])) .toast{z-index:80}
 @keyframes runbob{0%,100%{transform:translate(-3px,0)}50%{transform:translate(3px,-6px)}}
 @keyframes punch{0%,100%{transform:translateX(0) rotate(0)}40%{transform:translateX(-6px) rotate(-4deg)}}
 @media (prefers-reduced-motion:reduce){.petbtn[class*=" p-"] .cat .bob{animation:none}}
+/* welcome screen install tip: a quiet line so "start" stays the main action */
+.obtip{margin:0 0 2px;text-align:center;color:var(--muted);line-height:1.5}
+.linkbtn{background:none;border:0;padding:2px 2px;color:var(--leaf);font:inherit;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.howto .iosbar.top{margin:10px 0 28px}

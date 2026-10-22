@@ -773,7 +773,7 @@ function drawOB(){
   if(s===0) body=`<div style="text-align:center;display:flex;flex-direction:column;gap:10px;margin-top:auto">
     <div class="hero-cat">${imgSrc('hero_welcome')?`<img src="${imgSrc('hero_welcome')}" alt="" style="width:100%">`:petSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}})}</div>
     <h1>PawFit</h1><p class="muted">ออกกำลังแบบกลับมาเริ่มใหม่ได้เสมอ<br>กินให้พอดีกับเป้า มีเพื่อนตัวน้อยคอยเชียร์</p></div>
-   <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">${installMode()?obInstall():''}<button class="btn block${installMode()?' ghost':''}" data-act="ob" data-v="1">เริ่มตั้งค่าของฉัน</button><button class="btn ghost block" data-act="obSkip">ขอดูตัวอย่างก่อน</button></div>`;
+   <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">${installMode()?obInstall():''}<button class="btn block" data-act="ob" data-v="1">เริ่มตั้งค่าของฉัน</button><button class="btn ghost block" data-act="obSkip">ขอดูตัวอย่างก่อน</button></div>`;
   else if(s===1) body=`${dots}<div><div class="eyebrow">ขั้นที่ 1 จาก 3</div><h1>อยากไปทางไหนดี</h1><p class="muted small">ใช้คำนวณแคลกับโปรตีนให้พอดีกับเป้าหมาย ข้อมูลอยู่ในเครื่องนี้เท่านั้น</p></div>
    <div class="goals" role="group" aria-label="เป้าหมาย">${Object.entries(GOALS).map(([k,g])=>`<button type="button" class="goalc ${p.goalType===k?'on':''}" data-act="obGoal" data-v="${k}" aria-pressed="${p.goalType===k}"><b>${g.label}</b><span>${g.sub}</span></button>`).join('')}</div>
    <div class="seg-ctl" role="group" aria-label="เพศ"><button type="button" class="${p.sex==='f'?'on':''}" data-act="obSex" data-v="f">หญิง</button><button type="button" class="${p.sex==='m'?'on':''}" data-act="obSex" data-v="m">ชาย</button></div>
@@ -1001,7 +1001,7 @@ async function addImages(pairs){
 /* install to home screen: one-tap prompt on Android, picture steps on iPhone, "open in Safari/Chrome first" inside LINE/Facebook */
 const showInstall=()=>!S.installHide&&!!installMode();
 /* where an in-app link goes: LINE hands it to the phone's default browser, which on iPhone may be Safari or Chrome */
-const extBr=()=>isIOS()?'Safari หรือ Chrome':'Chrome';
+const extBr=()=>isIOS()?'Safari':'Chrome';
 function installBanner(){
   const m=installMode();
   const [txt,btn]=m==='prompt'?['<b>ติดตั้ง PawFit ลงหน้าจอโฮม</b> กดครั้งเดียว เปิดเต็มจอ ใช้ออฟไลน์ได้','<button class="btn small" data-act="installNow">ติดตั้งเลย</button>']
@@ -1012,10 +1012,10 @@ function installBanner(){
 /* welcome screen: install first, because on iPhone the home-screen app does not share data with Safari */
 function obInstall(){
   const m=installMode(), lineApp=inAppBrowser()==='LINE';
-  const [txt,btn]=m==='prompt'?['ติดตั้งก่อนเริ่ม จะได้เปิดจากหน้าจอโฮมได้ทุกวัน','<button class="btn block" data-act="installNow">ติดตั้งลงหน้าจอโฮม</button>']
-   :m==='inapp'?[`ตอนนี้เปิดอยู่ใน ${inAppBrowser()} ซึ่งติดตั้งไม่ได้ เปิดใน ${extBr()} ก่อนนะ`,lineApp?'<button class="btn block" data-act="openExternal">เปิดในเบราว์เซอร์</button>':'<button class="btn block" data-act="installHelp">ดูวิธีเปิด</button>']
-   :[`ติดตั้งก่อนเริ่ม ข้อมูลจะได้ไม่หาย ข้อมูลใน ${iosBrowser()} กับในแอปบนหน้าจอโฮมแยกกัน`,'<button class="btn block" data-act="installHelp">ดูวิธีติดตั้ง (3 ขั้น)</button>'];
-  return `<div class="obinstall"><p class="small">${txt}</p>${btn}</div>`;
+  const [txt,act,lab]=m==='prompt'?['ติดตั้งลงหน้าจอโฮมก่อนเริ่มได้นะ เปิดง่ายทุกวัน','installNow','ติดตั้ง']
+   :m==='inapp'?[`เปิดใน ${inAppBrowser()} อยู่ ติดตั้งไม่ได้ แนะนำเปิดใน ${extBr()} ก่อน`,lineApp?'openExternal':'installHelp',lineApp?`เปิดใน ${extBr()}`:'ดูวิธี']
+   :['แนะนำ: ติดตั้งลงหน้าจอโฮมก่อนเริ่ม ข้อมูลจะได้ไม่หาย','installHelp','ดูวิธี'];
+  return `<p class="obtip small">${txt} <button class="linkbtn" data-act="${act}">${lab}</button></p>`;
 }
 const stepN=n=>`<span class="check" style="border:0;background:var(--leaf);color:var(--leaf-ink)">${n}</span>`;
 const IC_ADDHOME='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
@@ -1033,6 +1033,7 @@ function installSheet(){
   }
   if(m==='prompt') return promptInstall().then(o=>{if(o==='accepted')toast('ติดตั้งแล้ว เปิด PawFit จากหน้าจอโฮมได้เลย');refreshInstall()});
   const bn=iosBrowser(), saf=bn==='Safari';
+  if(!saf) return otherIosSheet(bn,foot);
   const bar=saf?`<div class="iosbar" aria-hidden="true"><span>‹</span><span>›</span><span class="hl">${IC.share}</span><span>•••</span><i class="arrow">↓</i></div>
    <p class="small muted" style="text-align:center;margin-top:-4px">ปุ่มแชร์อยู่ที่แถบล่างของ Safari (iPad อยู่มุมขวาบน)</p>`
    :`<div class="iosbar top" aria-hidden="true"><span class="url">${esc(location.host)}</span><span class="hl">${IC.share}</span><span>•••</span><i class="arrow">↑</i></div>
@@ -1044,6 +1045,21 @@ function installSheet(){
    <div class="quest">${stepN(3)}<span>แตะ <b>เพิ่ม</b> มุมขวาบน แล้วเปิด PawFit จากไอคอนบนหน้าจอโฮม</span></div></div>
    ${saf?'':`<p class="small muted">ถ้าไม่เจอ "เพิ่มไปยังหน้าจอโฮม" ให้อัปเดต iPhone เป็น iOS 16.4 ขึ้นไป หรือเปิดลิงก์นี้ใน Safari แทน</p>`}
    <p class="small muted">ข้อควรรู้: ข้อมูลในแอปบนหน้าจอโฮมแยกจากใน ${bn} ถ้าเคยลองใช้ใน ${bn} มาก่อน ให้ส่งไฟล์สำรองจาก ${bn} แล้วกู้คืนในแอปที่ติดตั้ง</p>${foot}`);
+}
+/* iPhone, not Safari: most people install from Safari, so offer that first (x-safari-https opens Safari on iOS 17+) */
+function otherIosSheet(bn,foot){
+  openSheet('แนะนำติดตั้งจาก Safari',`<p class="small muted">ตอนนี้เปิดอยู่ใน ${bn} ติดตั้งจาก Safari จะง่ายกว่า และเป็นวิธีที่คนส่วนใหญ่ใช้</p>
+   <button class="btn" data-act="openSafari">เปิดใน Safari</button>
+   <p class="small muted" style="text-align:center">ถ้ากดแล้วไม่เปิด ให้คัดลอกลิงก์ แล้วไปวางในช่องที่อยู่ของ Safari</p>
+   <button class="btn ghost" data-act="copyLink">คัดลอกลิงก์</button>
+   <details class="howto"><summary>หรือติดตั้งจาก ${bn} ก็ได้</summary>
+    <div class="iosbar top" aria-hidden="true"><span class="url">${esc(location.host)}</span><span class="hl">${IC.share}</span><span>•••</span><i class="arrow">↑</i></div>
+    <div class="card flat" style="gap:10px">
+     <div class="quest">${stepN(1)}<span>แตะปุ่มแชร์ <span class="ico">${IC.share}</span> ในช่องที่อยู่เว็บด้านบน ถ้าไม่เห็น ให้แตะ <b>•••</b> แล้วเลือก <b>แชร์</b></span></div>
+     <div class="quest">${stepN(2)}<span>แตะ <span class="menuitem">เพิ่มไปยังหน้าจอโฮม ${IC_ADDHOME}</span></span></div>
+     <div class="quest">${stepN(3)}<span>แตะ <b>เพิ่ม</b> แล้วเปิด PawFit จากหน้าจอโฮม</span></div></div>
+    <p class="small muted">ต้องใช้ iOS 16.4 ขึ้นไป</p></details>
+   <p class="small muted">ข้อควรรู้: ข้อมูลในแอปบนหน้าจอโฮมแยกจากในเบราว์เซอร์ ถ้าเคยลองใช้ในเบราว์เซอร์มาก่อน ให้ส่งไฟล์สำรองแล้วกู้คืนในแอปที่ติดตั้ง</p>${foot}`);
 }
 const HEALTH_SHORTCUT='PawFit Health';
 function healthSheet(msg=''){
@@ -1227,6 +1243,7 @@ document.addEventListener('click',e=>{
      break;}
    case 'restoreSheet': restoreSheet(); break;
    case 'installHelp': case 'installNow': installSheet(); break;
+   case 'openSafari': location.href='x-safari-'+externalLink(); break;
    case 'openExternal': location.href=externalLink(); break;
    case 'shareLink':{const url=externalLink(), text='มาดูแลสุขภาพด้วยกันใน PawFit นับแคล ออกกำลัง แล้วเลี้ยงน้องตัวน้อยไปด้วย';
      if(navigator.share) navigator.share({title:'PawFit',text,url}).catch(()=>{});
