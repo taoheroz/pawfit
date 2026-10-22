@@ -110,7 +110,16 @@ function foodImg(key,size=44){
 const bossArt=()=>imgSrc('boss_lazy')?`<img src="${imgSrc('boss_lazy')}" alt="" class="bossimg">`:bossSVG;
 const CATS=[['all','ทั้งหมด'],['fav','เมนูประจำ'],['protein','โปรตีนสูง'],['dish','จานเดียว'],['side','กับข้าว'],['cvs','ร้านสะดวกซื้อ'],['snack','ผลไม้ ของว่าง'],['drink','เครื่องดื่ม'],['mine','เมนูของฉัน']];
 const MEALS=[['b','เช้า'],['l','กลางวัน'],['d','เย็น'],['s','ของว่าง']];
-const ACT=[[1.2,'นั่งทำงาน แทบไม่ได้ขยับ'],[1.375,'ขยับบ้าง ออกกำลัง 1–3 วัน/สัปดาห์'],[1.55,'ออกกำลัง 3–5 วัน/สัปดาห์'],[1.725,'ออกกำลังหนักเกือบทุกวัน']];
+/* everyday movement only; workouts add their own kcal on the day they happen (woBonus) */
+const ACT=[[1.2,'นั่งทำงานเกือบทั้งวัน'],[1.3,'ยืนหรือเดินบ้าง'],[1.45,'เดินเยอะ หรืองานใช้แรง']];
+const nearAct=a=>ACT.reduce((b,x)=>Math.abs(x[0]-a)<Math.abs(b[0]-a)?x:b)[0];
+/* goals: kcal offset from what the body uses, protein g per kg (lose uses goal weight) */
+const GOALS={lose:{label:'ลดน้ำหนัก',sub:'ลดไขมันช้า ๆ ไม่เด้งกลับ',d:-400,pk:1.8},
+ recomp:{label:'ลดไขมัน + เพิ่มกล้าม',sub:'หุ่นกระชับ น้ำหนักลดช้า',d:-250,pk:2.0},
+ gain:{label:'เพิ่มกล้าม',sub:'แข็งแรงขึ้น กินเกินนิดหน่อย',d:250,pk:1.8},
+ fit:{label:'แข็งแรงขึ้น',sub:'รักษาน้ำหนัก เน้นฟิต',d:0,pk:1.6}};
+const goalWLabel=g=>g==='lose'?'น้ำหนักเป้าหมาย (กก.)':g==='gain'?'น้ำหนักที่อยากไปถึง (กก.)':'น้ำหนักเป้าหมาย (ไม่ใส่ก็ได้)';
+const goalOf=p=>GOALS[p.goalType]?p.goalType:(p.goal<p.weight?'lose':'fit');
 const TIPS=[
  'กินโปรตีนทุกมื้อ ช่วยให้อิ่มนานและรักษากล้ามเนื้อไว้ตอนลดน้ำหนัก หุ่นจะกระชับ ไม่ใช่แค่ผอมลง',
  'ดื่มน้ำหนึ่งแก้วก่อนกินข้าว ช่วยให้รู้สึกอิ่มเร็วขึ้น',
@@ -220,18 +229,22 @@ const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return dk(d)};
 const logOf=(f,meal,qty=1)=>({name:f.name,kcal:f.kcal,p:f.p,c:f.c,f:f.f,tags:f.tags||[],art:f.art,meal,qty});
 function bmrOf(p){return 10*p.weight+6.25*p.height-5*p.age+(p.sex==='m'?5:-161)}
 function calcTargets(p){
-  const tdee=bmrOf(p)*p.activity;
-  let kcal=Math.round((tdee-(p.goal<p.weight?400:0))/10)*10;
+  const tdee=bmrOf(p)*p.activity, g=goalOf(p), G=GOALS[g];
+  let kcal=Math.round((tdee+G.d)/10)*10;
   kcal=Math.max(kcal,p.sex==='m'?1500:1200);
-  return {tdee:Math.round(tdee/10)*10,kcal,protein:Math.round(p.weight*1.6/5)*5,water:Math.max(6,Math.round(p.weight*33/250))};
+  const pw=g==='lose'&&p.goal>0?Math.min(p.weight,p.goal):p.weight;
+  return {tdee:Math.round(tdee/10)*10,kcal,protein:Math.round(pw*G.pk/5)*5,water:Math.max(6,Math.round(p.weight*33/250))};
 }
+/* workout days get extra food: minutes × 6 kcal, at most +250 (stretching adds nothing) */
+const woBonus=d=>Math.min(250,Math.round((d&&d.workouts||[]).filter(w=>w.kind!=='S').reduce((a,w)=>a+(w.min||0)*6,0)/10)*10);
+const kcalFor=d=>S.profile.kcal+woBonus(d);
 const DEF_GOALS={steps:8000,sleep:7,wpw:3,waistGoal:0,accent:'leaf'};
 function blankState(profile,pet){
   return {v:3,onboarded:true,obSeen:true,example:false,profile,days:{},weights:[],waist:[],custom:[],favs:['f30','f29','f1'],lifts:{},
     pet:{name:'ข้าวปั้น',kind:'cat',bonus:0,spent:0,owned:['orange'],equip:{head:null,face:null,skin:'orange'},...pet},program:{done:0},lastBackup:null,adaptSeen:null};
 }
 function seed(){
-  const prof={sex:'f',age:28,height:160,weight:62.3,goal:55,activity:1.375,...DEF_GOALS};
+  const prof={sex:'f',age:28,height:160,weight:62.3,goal:55,activity:1.2,goalType:'lose',...DEF_GOALS};
   Object.assign(prof,calcTargets(prof)); delete prof.tdee;
   const st=blankState(prof); st.example=true; st.onboarded=false; st.obSeen=false; st.favs=['f30','f29','f1','f45']; st.lifts={'สควอท':4};
   const L=(name,meal)=>logOf(FOODS.find(f=>f.name===name),meal);
@@ -255,6 +268,8 @@ function migrate(o){
   if(!o||![1,2,3].includes(o.v)) return null;
   if(o.example&&o.v!==3) return null;   /* older sample data: reseed with the newer sample */
   o.v=3; o.profile={...DEF_GOALS,...o.profile};
+  if(!GOALS[o.profile.goalType]) o.profile.goalType=goalOf(o.profile);
+  o.profile.activity=nearAct(o.profile.activity||1.2);   /* old lists counted workouts here; kcal target is kept as saved */
   o.favs=o.favs||['f30','f29','f1']; o.lifts=o.lifts||{}; o.waist=o.waist||[]; o.custom=o.custom||[];
   o.pet={kind:'cat',bonus:0,spent:0,owned:['orange'],...o.pet}; o.pet.equip={head:null,face:null,skin:'orange',...(o.pet.equip||{})};
   if(o.onboarded===undefined){o.onboarded=true;o.obSeen=true}
@@ -300,7 +315,7 @@ function xpParts(k){
   const parts=[
    ['บันทึกอาหาร 3 มื้อขึ้นไป',10,meals.size>=3],
    ['โปรตีนถึงเป้า',15,t.p>=T.protein*.9],
-   ['แคลอยู่ในช่วงพอดี',15,meals.size>=2&&t.kcal>=T.kcal*.85&&t.kcal<=T.kcal*1.05],
+   ['แคลอยู่ในช่วงพอดี',15,meals.size>=2&&t.kcal>=kcalFor(d)*.85&&t.kcal<=kcalFor(d)*1.05],
    ['ดื่มน้ำครบ',10,d.water>=T.water],
    ['เดินครบเป้า',10,d.steps>=T.steps],
    ['นอนครบเป้า',5,d.sleep>=T.sleep],
@@ -373,7 +388,7 @@ function adaptive(){
   const slope=xs.reduce((a,x,i)=>a+(x-mx)*(ys[i]-my),0)/xs.reduce((a,x)=>a+(x-mx)**2,0);
   const intake=logged.reduce((a,k)=>a+totals(S.days[k]).kcal,0)/logged.length;
   const tdee=Math.round((intake-slope*7700)/10)*10;
-  let target=T.goal<T.weight?tdee-400:tdee;
+  let target=tdee+GOALS[goalOf(T)].d;
   target=Math.max(T.kcal-300,Math.min(T.kcal+300,target));
   target=Math.max(target,T.sex==='m'?1500:1200); target=Math.round(target/10)*10;
   return {ready,tdee,intake:Math.round(intake),rate:r1(-slope*7),target,diff:target-T.kcal,days:logged.length};
@@ -476,11 +491,11 @@ const TABS=()=>[['today','วันนี้'],['food','อาหาร'],['trai
 
 /* ================= advice ================= */
 function advice(){
-  const T=S.profile, t=totals(day()), R=T.kcal-t.kcal, P=T.protein-t.p, h=isToday()?new Date().getHours():23;
+  const T=S.profile, t=totals(day()), K=kcalFor(day()), R=K-t.kcal, P=T.protein-t.p, h=isToday()?new Date().getHours():23;
   let msg;
   if(t.kcal===0) msg=isToday()?'เริ่มวันด้วยมื้อเช้าที่มีโปรตีน เช่น ไข่ต้มหรือโยเกิร์ต จะอิ่มนานถึงเที่ยง':'วันนี้ยังไม่มีบันทึก เติมย้อนหลังได้เลย จำได้เท่าไหร่ใส่เท่านั้นก็พอ';
   else if(R<0) msg=`${isToday()?'วันนี้':'วันนั้น'}เกินเป้ามา ${fmt(-R)} kcal ไม่เป็นไรเลย วันเดียวไม่ทำให้อ้วน เดินเพิ่มสัก 20 นาที แล้วเริ่มใหม่`;
-  else if(h>=19&&t.kcal<T.kcal*.6) msg='กินน้อยไปหน่อย กินน้อยเกินไปทำให้เผาผลาญช้าลงและหิวหนักวันถัดไป มื้อเย็นกินให้ครบนะ';
+  else if(h>=19&&t.kcal<K*.6) msg='กินน้อยไปหน่อย กินน้อยเกินไปทำให้เผาผลาญช้าลงและหิวหนักวันถัดไป มื้อเย็นกินให้ครบนะ';
   else if(P>15&&P*10>R*.6) msg=`ยังขาดโปรตีนอีก ${fmt(P)} g เลือกเมนูโปรตีนสูงจะคุ้มแคลที่สุด`;
   else msg=`เหลือ ${fmt(R)} kcal กับโปรตีน ${fmt(Math.max(P,0))} g ลองเมนูพวกนี้`;
   const pool=allFoods().filter(f=>!f.tags.includes('sweet')&&f.kcal<=Math.max(R,160)+40&&f.kcal>=50);
@@ -505,8 +520,8 @@ function stageHTML(){
    <div class="lvbar" aria-label="EXP ${L.cur} จาก ${L.need}"><i style="width:${L.cur/L.need*100}%"></i></div></section>`;
 }
 function vToday(){
-  const T=S.profile, d=day(), t=totals(d), R=T.kcal-t.kcal, over=R<0, today=isToday();
-  const C1=2*Math.PI*56, C2=2*Math.PI*42, p1=Math.min(t.kcal/T.kcal,1), p2=Math.min(t.p/T.protein,1);
+  const T=S.profile, d=day(), t=totals(d), K=kcalFor(d), wb=woBonus(d), R=K-t.kcal, over=R<0, today=isToday();
+  const C1=2*Math.PI*56, C2=2*Math.PI*42, p1=Math.min(t.kcal/K,1), p2=Math.min(t.p/T.protein,1);
   const adv=advice(), qs=questsFor(CUR), lw=lastWorkoutAgo(), nx=sessionInfo(S.program.done);
   const favs=S.favs.map(foodById).filter(Boolean), qd=qs.filter(q=>q.ok(d,t,T)).length;
   const comeback=lw===null||lw>=3, wk=weekOf(CUR), dead=wk>=T.wpw, ad=today&&adaptPending();
@@ -529,9 +544,9 @@ function vToday(){
   <section class="card hero tint-kcal" aria-label="สรุปแคลอรี">
    <div class="ring"><svg viewBox="0 0 136 136"><circle cx="68" cy="68" r="56" fill="none" stroke="color-mix(in srgb,var(--kcal) 14%,transparent)" stroke-width="11"/><circle cx="68" cy="68" r="56" fill="none" stroke="${over?'var(--warn)':'var(--kcal)'}" stroke-width="11" stroke-linecap="round" stroke-dasharray="${C1}" stroke-dashoffset="${C1*(1-p1)}"/>
     <circle cx="68" cy="68" r="42" fill="none" stroke="color-mix(in srgb,var(--prot) 14%,transparent)" stroke-width="9"/><circle cx="68" cy="68" r="42" fill="none" stroke="var(--prot)" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C2}" stroke-dashoffset="${C2*(1-p2)}"/></svg>
-    <div class="c"><span class="lab">${over?'เกินมา':'เหลือ'}</span><span class="big num">${fmt(Math.abs(R))}</span><span class="lab">kcal</span></div></div>
+    <div class="c"><span class="lab">${over?'เกินมา':'เหลือ'}</span><span class="big num">${fmt(Math.abs(R))}</span><span class="lab">kcal</span>${wb?`<span class="lab wb">+${wb} วันออกกำลัง</span>`:''}</div></div>
    <div class="macros">
-    <div class="mac"><div class="row-between"><span><i class="dotl" style="background:var(--kcal)"></i>แคลอรี</span><span class="num muted">${fmt(t.kcal)}/${fmt(T.kcal)}</span></div></div>
+    <div class="mac"><div class="row-between"><span><i class="dotl" style="background:var(--kcal)"></i>แคลอรี</span><span class="num muted">${fmt(t.kcal)}/${fmt(K)}</span></div></div>
     <div class="mac"><div class="row-between"><span><i class="dotl" style="background:var(--prot)"></i>โปรตีน</span><span class="num muted">${fmt(t.p)}/${T.protein} g</span></div></div>
     <div class="mac"><div class="row-between"><span><i class="dotl" style="background:var(--carb)"></i>คาร์บ</span><span class="num muted">${fmt(t.c)} g</span></div></div>
     <div class="mac"><div class="row-between"><span><i class="dotl" style="background:var(--fat)"></i>ไขมัน</span><span class="num muted">${fmt(t.f)} g</span></div></div>
@@ -555,8 +570,8 @@ function vToday(){
 }
 let MORE_OPEN=false;
 function vFood(){
-  const T=S.profile,d=day(),t=totals(d);
-  return `<header class="top"><div><div class="eyebrow">อาหาร · ${thDate(CUR)}</div><h1 class="num">${fmt(t.kcal)} <span class="muted" style="font-size:16px">/ ${fmt(T.kcal)} kcal</span></h1></div><button class="chip" data-act="goals">ปรับเป้า</button></header>
+  const T=S.profile,d=day(),t=totals(d),wb=woBonus(d);
+  return `<header class="top"><div><div class="eyebrow">อาหาร · ${thDate(CUR)}${wb?` · +${wb} วันออกกำลัง`:''}</div><h1 class="num">${fmt(t.kcal)} <span class="muted" style="font-size:16px">/ ${fmt(kcalFor(d))} kcal</span></h1></div><button class="chip" data-act="goals">ปรับเป้า</button></header>
   ${dateBar()}${pastBanner()}
   <section class="card"><div class="stats">
    <div class="stat"><b class="num" style="color:var(--prot)">${fmt(t.p)} g</b><span>โปรตีน · เป้า ${T.protein}</span>${bar(t.p,T.protein,'var(--prot)')}</div>
@@ -611,7 +626,7 @@ function weekly(){
   const lg=rows.filter(r=>r.logged);
   const avg=lg.length?lg.reduce((a,r)=>a+r.t.kcal,0)/lg.length:0;
   const pHit=rows.filter(r=>r.logged&&r.t.p>=T.protein*.9).length;
-  const inR=rows.filter(r=>r.logged&&r.t.kcal>=T.kcal*.85&&r.t.kcal<=T.kcal*1.05).length;
+  const inR=rows.filter(r=>r.logged&&r.t.kcal>=kcalFor(r.d)*.85&&r.t.kcal<=kcalFor(r.d)*1.05).length;
   const wo=rows.reduce((a,r)=>a+(r.d?r.d.workouts.length:0),0);
   const stp=rows.filter(r=>r.d&&r.d.steps);const stepsAvg=stp.length?stp.reduce((a,r)=>a+r.d.steps,0)/stp.length:0;
   let focus;
@@ -621,7 +636,7 @@ function weekly(){
   else focus='สัปดาห์นี้ดีมาก รักษาจังหวะนี้ไว้';
   const lab=['อา','จ','อ','พ','พฤ','ศ','ส'];
   return `<section class="card"><h2>สรุป 7 วันที่ผ่านมา</h2>
-   <div class="week">${rows.map(r=>{const ok=r.logged&&r.t.p>=T.protein*.9&&r.t.kcal<=T.kcal*1.05;return `<div style="display:flex;flex-direction:column;gap:4px"><span>${lab[pd(r.k).getDay()]}</span><span class="d num ${ok?'ok':r.logged?'half':''}">${pd(r.k).getDate()}</span></div>`}).join('')}</div>
+   <div class="week">${rows.map(r=>{const ok=r.logged&&r.t.p>=T.protein*.9&&r.t.kcal<=kcalFor(r.d)*1.05;return `<div style="display:flex;flex-direction:column;gap:4px"><span>${lab[pd(r.k).getDay()]}</span><span class="d num ${ok?'ok':r.logged?'half':''}">${pd(r.k).getDate()}</span></div>`}).join('')}</div>
    <div class="stats"><div class="stat"><b class="num">${fmt(avg)}</b><span>kcal เฉลี่ย/วัน</span></div><div class="stat"><b class="num">${pHit}/7</b><span>วันโปรตีนถึงเป้า</span></div><div class="stat"><b class="num">${wo}/${T.wpw}</b><span>ครั้งออกกำลัง</span></div>
    <div class="stat"><b class="num">${inR}/7</b><span>วันแคลพอดี</span></div><div class="stat"><b class="num">${fmt(stepsAvg)}</b><span>ก้าวเฉลี่ย</span></div><div class="stat"><b class="num">${streak()}</b><span>วันติดต่อกัน</span></div></div>
    <div class="banner"><span>${focus}</span></div></section>`;
@@ -648,7 +663,7 @@ function vBody(){
   <section class="card">${chartSVG(W.map(x=>({d:x.d,v:x.kg})),'กก.')}
    <div class="stats"><div class="stat"><b class="num">${lost>=0?'−':'+'}${r1(Math.abs(lost))}</b><span>กก. ตั้งแต่เริ่ม</span></div>
    <div class="stat"><b class="num">${r1(Math.abs(rate))}</b><span>กก./สัปดาห์</span></div>
-   <div class="stat"><b class="num">${last?r1(Math.max(last.kg-P.goal,0)):'–'}</b><span>กก. ถึงเป้า</span></div></div>
+   <div class="stat"><b class="num">${last?r1(Math.abs(last.kg-P.goal)):'–'}</b><span>กก. ถึงเป้า</span></div></div>
    <p class="small muted">${rate>1?'ลดเร็วกว่าที่แนะนำ ลองเพิ่มอาหารอีกนิด เพื่อรักษากล้ามเนื้อไว้':rate>=.2?'กำลังดีเลย อยู่ในช่วงที่ยั่งยืน 0.25–0.75 กก./สัปดาห์':'น้ำหนักแกว่งได้ทุกวัน ดูแนวโน้มหลายสัปดาห์ และดูรอบเอวประกอบด้วย'}</p></section>
   ${adaptCard()}
   ${weekly()}
@@ -659,7 +674,7 @@ function vBody(){
   <section class="card"><div class="row-between"><h2>เป้าหมายทั้งหมด</h2><button class="btn ghost small" data-act="goals">แก้ไข</button></div>
    <div class="stats"><div class="stat"><b class="num">${fmt(P.kcal)}</b><span>kcal/วัน</span></div><div class="stat"><b class="num">${P.protein} g</b><span>โปรตีน/วัน</span></div><div class="stat"><b class="num">${P.water}</b><span>แก้วน้ำ/วัน</span></div>
    <div class="stat"><b class="num">${fmt(P.steps)}</b><span>ก้าว/วัน</span></div><div class="stat"><b class="num">${P.sleep}</b><span>ชม. นอน</span></div><div class="stat"><b class="num">${P.wpw}</b><span>ครั้ง/สัปดาห์</span></div></div>
-   <p class="small muted">${P.sex==='f'?'หญิง':'ชาย'} ${P.age} ปี · ${P.height} ซม. · ${act?act[1]:''}</p></section>
+   <p class="small muted">${P.sex==='f'?'หญิง':'ชาย'} ${P.age} ปี · ${P.height} ซม. · ${act?act[1]:''} · เป้าหมาย: ${GOALS[goalOf(P)].label}</p></section>
   <section class="card"><div class="row-between"><h2>ภาพประกอบของฉัน</h2><span class="pill num">${allSlots().filter(k=>IMGURL[k]).length}/${allSlots().length}</span></div>
    <p class="small muted">ใส่ภาพที่เจนจาก AI แทนภาพวาดในแอป เลือกหลายไฟล์ได้ทีเดียว ระบบจับคู่จากชื่อไฟล์ให้</p>
    <div class="slots mini">${allSlots().filter(k=>IMGURL[k]).slice(0,6).map(k=>`<div class="sp">${slotPreview(k)}</div>`).join('')}</div>
@@ -708,7 +723,7 @@ function render(animate){
 let OB=null;
 function showOB(step){
   const P=S.profile;
-  OB=OB||{p:{sex:P.sex,age:P.age,height:P.height,weight:P.weight,goal:P.goal,activity:P.activity},kind:'cat',skin:'orange',name:'ข้าวปั้น',t:null};
+  OB=OB||{p:{sex:P.sex,age:P.age,height:P.height,weight:P.weight,goal:P.goal,activity:nearAct(P.activity),goalType:goalOf(P)},kind:'cat',skin:'orange',name:'ข้าวปั้น',t:null};
   OB.step=step; drawOB(); document.getElementById('ob').hidden=false; document.body.style.overflow='hidden';
 }
 function hideOB(){document.getElementById('ob').hidden=true;document.body.style.overflow='';}
@@ -720,28 +735,30 @@ function drawOB(){
     <div class="hero-cat">${imgSrc('hero_welcome')?`<img src="${imgSrc('hero_welcome')}" alt="" style="width:100%">`:petSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}})}</div>
     <h1>PawFit</h1><p class="muted">ดูแลสุขภาพทีละนิด พร้อมเพื่อนตัวน้อยที่โตไปกับเธอ<br>นับแคล โปรตีน ออกกำลังแบบไม่กดดัน</p></div>
    <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">${installMode()?obInstall():''}<button class="btn block${installMode()?' ghost':''}" data-act="ob" data-v="1">เริ่มตั้งค่าของฉัน</button><button class="btn ghost block" data-act="obSkip">ขอดูตัวอย่างก่อน</button></div>`;
-  else if(s===1) body=`${dots}<div><div class="eyebrow">ขั้นที่ 1 จาก 3</div><h1>เล่าเรื่องร่างกายให้ฟังหน่อย</h1><p class="muted small">ใช้คำนวณเป้าที่พอดีกับเธอ ข้อมูลอยู่ในเครื่องนี้เท่านั้น</p></div>
+  else if(s===1) body=`${dots}<div><div class="eyebrow">ขั้นที่ 1 จาก 3</div><h1>อยากไปทางไหนดี</h1><p class="muted small">ใช้คำนวณแคลกับโปรตีนให้พอดีกับเป้าหมาย ข้อมูลอยู่ในเครื่องนี้เท่านั้น</p></div>
+   <div class="goals" role="group" aria-label="เป้าหมาย">${Object.entries(GOALS).map(([k,g])=>`<button type="button" class="goalc ${p.goalType===k?'on':''}" data-act="obGoal" data-v="${k}" aria-pressed="${p.goalType===k}"><b>${g.label}</b><span>${g.sub}</span></button>`).join('')}</div>
    <div class="seg-ctl" role="group" aria-label="เพศ"><button type="button" class="${p.sex==='f'?'on':''}" data-act="obSex" data-v="f">หญิง</button><button type="button" class="${p.sex==='m'?'on':''}" data-act="obSex" data-v="m">ชาย</button></div>
    <div class="grid2"><label class="field" for="oAge">อายุ (ปี)<input id="oAge" type="number" inputmode="numeric" value="${p.age}"></label><label class="field" for="oH">ส่วนสูง (ซม.)<input id="oH" type="number" inputmode="numeric" value="${p.height}"></label>
-   <label class="field" for="oW">น้ำหนักตอนนี้ (กก.)<input id="oW" type="number" inputmode="decimal" step="0.1" value="${p.weight}"></label><label class="field" for="oG">น้ำหนักเป้าหมาย (กก.)<input id="oG" type="number" inputmode="decimal" step="0.1" value="${p.goal}"></label></div>
-   <label class="field" for="oA">ปกติขยับตัวแค่ไหน<select id="oA">${ACT.map(a=>`<option value="${a[0]}" ${a[0]===p.activity?'selected':''}>${a[1]}</option>`).join('')}</select></label>
+   <label class="field" for="oW">น้ำหนักตอนนี้ (กก.)<input id="oW" type="number" inputmode="decimal" step="0.1" value="${p.weight}"></label><label class="field" for="oG"><span id="oGl">${goalWLabel(p.goalType)}</span><input id="oG" type="number" inputmode="decimal" step="0.1" value="${p.goal}"></label></div>
+   <label class="field" for="oA">ชีวิตประจำวัน ขยับตัวแค่ไหน (ไม่นับออกกำลัง แอปบวกให้ในวันที่ออก)<select id="oA">${ACT.map(a=>`<option value="${a[0]}" ${a[0]===p.activity?'selected':''}>${a[1]}</option>`).join('')}</select></label>
    <div class="err" id="oErr"></div>
    <div class="obnav"><button class="btn ghost" data-act="ob" data-v="0">ย้อนกลับ</button><button class="btn" data-act="ob1">ถัดไป</button></div>`;
   else if(s===2){
     const t=OB.t||calcTargets(p); OB.t=t; const floor=p.sex==='m'?1500:1200;
-    body=`${dots}<div><div class="eyebrow">ขั้นที่ 2 จาก 3</div><h1>นี่คือเป้าของเธอ</h1><p class="muted small">คำนวณให้แล้ว ไม่แน่ใจก็กดถัดไปได้เลย แก้ตัวเลขเองได้ทุกช่อง และแอปจะช่วยปรับให้แม่นขึ้นเมื่อใช้ไป 2–3 สัปดาห์</p></div>
+    body=`${dots}<div><div class="eyebrow">ขั้นที่ 2 จาก 3</div><h1>นี่คือเป้าของเธอ</h1><div class="pill" style="align-self:flex-start;margin-top:4px">${GOALS[goalOf(p)].label}</div><p class="muted small">คำนวณให้แล้ว ไม่แน่ใจก็กดถัดไปได้เลย แก้ตัวเลขเองได้ทุกช่อง และแอปจะช่วยปรับให้แม่นขึ้นเมื่อใช้ไป 2–3 สัปดาห์</p></div>
      <div class="card explain">
       <div class="row"><span class="tag A" style="width:36px;height:36px">${IC.spark}</span><span>ร่างกายใช้พลังงานราว</span><b class="num">${fmt(t.tdee)}</b></div>
-      <span class="small muted" style="margin-top:-6px">kcal ต่อวัน รวมทั้งตอนพักและตอนขยับตัว ถ้ากินเท่านี้น้ำหนักจะคงที่</span>
-      ${p.goal<p.weight?`<div class="small">อยากลดเร็วแค่ไหน</div><div class="chips" id="oPace"></div>`:''}
+      <span class="small muted" style="margin-top:-6px">kcal ต่อวัน ในวันที่ไม่ได้ออกกำลัง ถ้ากินเท่านี้น้ำหนักจะคงที่ วันที่ออกกำลังแอปจะบวกเพิ่มให้เอง</span>
+      ${goalOf(p)==='lose'?`<div class="small">อยากลดเร็วแค่ไหน</div><div class="chips" id="oPace"></div>`:''}
       <label class="field" for="oK">เป้าแคลต่อวัน (kcal)<input id="oK" type="number" inputmode="numeric" value="${t.kcal}"></label>
       <div id="oGuide" aria-live="polite"></div>
       <label class="field" for="oP">โปรตีนต่อวัน (g) ช่วยรักษากล้ามเนื้อให้หุ่นกระชับ<input id="oP" type="number" inputmode="numeric" value="${t.protein}"></label>
       <div class="grid2"><label class="field" for="oWa">น้ำ (แก้ว 250 มล.)<input id="oWa" type="number" inputmode="numeric" value="${t.water}"></label><label class="field" for="oWpw">ออกกำลัง (ครั้ง/สัปดาห์)<input id="oWpw" type="number" inputmode="numeric" value="3" min="1" max="7"></label></div>
       <details class="howto"><summary>ตัวเลขพวกนี้คิดมาจากไหน?</summary><ol>
        <li><b>พลังงานที่ใช้ต่อวัน</b> = พลังงานพื้นฐานตอนพัก คิดจากเพศ อายุ ส่วนสูง น้ำหนัก (${fmt(Math.round(bmrOf(p)))} kcal) × ระดับการขยับตัว (×${p.activity}) ≈ ${fmt(t.tdee)} kcal</li>
-       <li><b>เป้าแคล</b> = กินให้น้อยกว่าที่ใช้นิดหน่อย ไขมัน 1 กก. ≈ 7,700 kcal ถ้าขาดวันละ 400 จะลดได้ราว 0.4 กก./สัปดาห์ และไม่ควรต่ำกว่า ${fmt(floor)} kcal</li>
-       <li><b>โปรตีน</b> = น้ำหนัก ${p.weight} กก. × 1.6 g ≈ ${t.protein} g เช่น อกไก่ 100 กรัมได้ราว 23 g ไข่ 1 ฟองราว 6 g</li>
+       <li><b>เป้าแคล</b> = ${{lose:'กินให้น้อยกว่าที่ใช้ราว 400 ไขมัน 1 กก. ≈ 7,700 kcal จึงลดได้ราว 0.4 กก./สัปดาห์',recomp:'กินน้อยกว่าที่ใช้แค่ราว 250 พอให้ไขมันลด แต่ยังมีแรงสร้างกล้าม',gain:'กินเกินที่ใช้ราว 250 พอให้กล้ามโต โดยไขมันไม่ขึ้นเร็ว',fit:'กินเท่ากับที่ใช้ น้ำหนักคงที่'}[goalOf(p)]} และไม่ควรต่ำกว่า ${fmt(floor)} kcal</li>
+       <li><b>วันที่ออกกำลัง</b> แอปบวกแคลให้อีก นาทีละ 6 kcal (สูงสุด +250) เช่น เวท 35 นาที +210 จะได้ไม่กินน้อยไปในวันที่ใช้แรง</li>
+       <li><b>โปรตีน</b> = ${goalOf(p)==='lose'?`น้ำหนักเป้าหมาย ${Math.min(p.weight,p.goal)}`:`น้ำหนัก ${p.weight}`} กก. × ${GOALS[goalOf(p)].pk} g ≈ ${t.protein} g ช่วยสร้างและรักษากล้าม เช่น อกไก่ 100 กรัมได้ราว 23 g ไข่ 1 ฟองราว 6 g</li>
        <li><b>น้ำ</b> = น้ำหนัก × 33 มล. แล้วแบ่งเป็นแก้วละ 250 มล.</li>
        <li><b>ออกกำลัง</b> เพิ่งกลับมาเริ่มใหม่ 2–3 ครั้งต่อสัปดาห์ก็พอ แอปนับเป็นครั้ง หยุดไปก็ทำต่อจากเดิมได้</li></ol></details>
      </div>
@@ -763,12 +780,15 @@ const paceKcal=(t,p,d)=>Math.max(Math.round((t.tdee-d)/10)*10,p.sex==='m'?1500:1
 function obGuide(){
   const p=OB.p, t=OB.t, kcal=gv('oK'), g=document.getElementById('oGuide'), eta=document.getElementById('oEta'), pace=document.getElementById('oPace');
   if(!g) return;
-  const lose=p.goal<p.weight, floor=p.sex==='m'?1500:1200, rate=Math.max(0,(t.tdee-kcal)*7/7700);
+  const gt=goalOf(p), lose=gt==='lose', floor=p.sex==='m'?1500:1200, rate=Math.max(0,(t.tdee-kcal)*7/7700), up=(kcal-t.tdee)*7/7700;
   if(pace) pace.innerHTML=PACE.map(([d,l])=>{const k=paceKcal(t,p,d);return `<button type="button" class="chip ${k===kcal?'on':''}" data-act="obPace" data-v="${k}">${l} <span class="num">${fmt(k)}</span></button>`}).join('');
   let msg='', warn=false;
   if(!(kcal>0)) msg='ใส่ตัวเลขแคลที่อยากกินต่อวัน';
   else if(kcal<floor){msg=`ต่ำกว่า ${fmt(floor)} kcal จะหิวจนเลิกกลางทางได้ง่าย และเสียกล้ามเนื้อ ลองขยับขึ้นอีกนิดนะ`;warn=true}
-  else if(!lose) msg=kcal>t.tdee+150?'มากกว่าที่ร่างกายใช้ เหมาะกับคนอยากเพิ่มน้ำหนัก':'ใกล้กับที่ร่างกายใช้ เหมาะกับการรักษาน้ำหนัก';
+  else if(gt==='gain'){ if(up>.5){msg=`เพิ่มราว ${r1(up)} กก./สัปดาห์ เร็วไป ไขมันจะขึ้นด้วย แนะนำเกินที่ใช้ 200–300 kcal`;warn=true}
+    else msg=up>0?`กินเกินที่ใช้ ${fmt(kcal-t.tdee)} kcal กล้ามโตได้โดยไม่อ้วนเร็ว ต้องเล่นเวทคู่กันนะ`:'น้อยกว่าที่ใช้ กล้ามจะโตยาก ลองกินเกินที่ใช้สัก 250 kcal'}
+  else if(gt==='recomp') msg=rate>.6?`ขาดเยอะไปนิด ลดไขมันพร้อมเพิ่มกล้ามควรขาดแค่ 200–300 kcal`:`ขาดไม่มาก น้ำหนักลดช้า แต่ไขมันลดและกล้ามเพิ่มถ้าเล่นเวทสม่ำเสมอ`;
+  else if(gt==='fit') msg=Math.abs(kcal-t.tdee)<=150?'ใกล้กับที่ร่างกายใช้ น้ำหนักคงที่ เน้นแข็งแรงขึ้น':kcal<t.tdee?'น้อยกว่าที่ใช้ น้ำหนักจะค่อย ๆ ลด':'มากกว่าที่ใช้ น้ำหนักจะค่อย ๆ ขึ้น';
   else if(rate<=0) msg='เท่ากับหรือมากกว่าที่ร่างกายใช้ น้ำหนักจะยังไม่ลด';
   else if(rate>1){msg=`ลดราว ${r1(rate)} กก./สัปดาห์ เร็วเกินไป เสี่ยงเสียกล้ามเนื้อและเด้งกลับ แนะนำ 0.25–0.75 กก.`;warn=true}
   else if(rate>.75) msg=`ลดราว ${r1(rate)} กก./สัปดาห์ เร็วกว่าที่แนะนำนิดหน่อย ถ้ารู้สึกหิวมากให้เพิ่มแคลขึ้น`;
@@ -810,12 +830,13 @@ function customForm(){
 function goalsSheet(){
   const P=S.profile;
   openSheet('โปรไฟล์และเป้าหมาย',`<div id="pf" style="display:flex;flex-direction:column;gap:12px">
+  <label class="field" for="pGoalT">เป้าหมาย<select id="pGoalT">${Object.entries(GOALS).map(([k,g])=>`<option value="${k}" ${goalOf(P)===k?'selected':''}>${g.label}</option>`).join('')}</select></label>
   <h3>ข้อมูลร่างกาย</h3>
   <div class="seg-ctl" role="group" aria-label="เพศ"><button type="button" class="${P.sex==='f'?'on':''}" data-act="sex" data-v="f">หญิง</button><button type="button" class="${P.sex==='m'?'on':''}" data-act="sex" data-v="m">ชาย</button></div>
   <input type="hidden" id="pSex" value="${P.sex}">
   <div class="grid2"><label class="field" for="pAge">อายุ (ปี)<input id="pAge" type="number" inputmode="numeric" value="${P.age}"></label><label class="field" for="pH">ส่วนสูง (ซม.)<input id="pH" type="number" inputmode="numeric" value="${P.height}"></label>
   <label class="field" for="pW">น้ำหนักตอนนี้ (กก.)<input id="pW" type="number" inputmode="decimal" step="0.1" value="${P.weight}"></label><label class="field" for="pG">น้ำหนักเป้าหมาย (กก.)<input id="pG" type="number" inputmode="decimal" step="0.1" value="${P.goal}"></label></div>
-  <label class="field" for="pA">ระดับกิจกรรม<select id="pA">${ACT.map(a=>`<option value="${a[0]}" ${a[0]===P.activity?'selected':''}>${a[1]}</option>`).join('')}</select></label>
+  <label class="field" for="pA">ชีวิตประจำวัน (ไม่นับออกกำลัง)<select id="pA">${ACT.map(a=>`<option value="${a[0]}" ${a[0]===nearAct(P.activity)?'selected':''}>${a[1]}</option>`).join('')}</select></label>
   <h3>เป้ารายวัน</h3><span class="small muted">แคลกับโปรตีนคำนวณให้อัตโนมัติจากข้อมูลด้านบน ปรับเองได้ทุกช่อง</span>
   <div class="grid2"><label class="field" for="pK">แคลอรี (kcal)<input id="pK" type="number" inputmode="numeric" value="${P.kcal}"></label><label class="field" for="pP">โปรตีน (g)<input id="pP" type="number" inputmode="numeric" value="${P.protein}"></label>
   <label class="field" for="pWa">น้ำ (แก้ว 250 มล.)<input id="pWa" type="number" inputmode="numeric" value="${P.water}"></label><label class="field" for="pSt">ก้าวเดิน<input id="pSt" type="number" inputmode="numeric" step="500" value="${P.steps}"></label>
@@ -825,7 +846,7 @@ function goalsSheet(){
   <div class="err" id="pErr"></div><button class="btn" type="button" data-act="saveGoals">บันทึก</button></div>`);
 }
 const gv=id=>parseFloat(document.getElementById(id).value);
-function readProfile(){return {sex:document.getElementById('pSex').value,age:gv('pAge'),height:gv('pH'),weight:gv('pW'),goal:gv('pG'),activity:gv('pA')}}
+function readProfile(){return {goalType:document.getElementById('pGoalT').value,sex:document.getElementById('pSex').value,age:gv('pAge'),height:gv('pH'),weight:gv('pW'),goal:gv('pG'),activity:gv('pA')}}
 function recalcProfile(){
   const p=readProfile(); if([p.age,p.height,p.weight].some(n=>!(n>0)))return;
   const t=calcTargets(p);
@@ -1203,12 +1224,16 @@ document.addEventListener('click',e=>{
    case 'onboard': OB=null; showOB(1); break;
    case 'ob': {const v=+b.dataset.v; if(OB.step===2&&v===1)OB.t=null; showOB(v); break}
    case 'obSkip': S.obSeen=true; save(); hideOB(); break;
+   case 'obGoal': OB.p.goalType=b.dataset.v; b.parentNode.querySelectorAll('button').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-pressed',x===b)}); document.getElementById('oGl').textContent=goalWLabel(OB.p.goalType); break;
    case 'obSex': OB.p.sex=b.dataset.v; b.parentNode.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b)); break;
    case 'ob1':{
-     const p={sex:OB.p.sex,age:gv('oAge'),height:gv('oH'),weight:gv('oW'),goal:gv('oG'),activity:gv('oA')}, err=document.getElementById('oErr');
+     const p={sex:OB.p.sex,goalType:OB.p.goalType,age:gv('oAge'),height:gv('oH'),weight:gv('oW'),goal:gv('oG'),activity:gv('oA')}, err=document.getElementById('oErr');
+     if(!(p.goal>0)) p.goal=p.weight;   /* goal weight is optional for recomp / fit */
      if(!(p.age>=15&&p.age<=90)){err.textContent='อายุต้องอยู่ระหว่าง 15–90 ปี';break}
      if(!(p.height>=120&&p.height<=220)){err.textContent='ส่วนสูงต้องอยู่ระหว่าง 120–220 ซม.';break}
      if(!(p.weight>=30&&p.weight<=250)||!(p.goal>=30&&p.goal<=250)){err.textContent='น้ำหนักต้องอยู่ระหว่าง 30–250 กก.';break}
+     if(p.goalType==='lose'&&p.goal>=p.weight){err.textContent='เป้าหมายลดน้ำหนัก น้ำหนักเป้าหมายต้องน้อยกว่าน้ำหนักตอนนี้';break}
+     if(p.goalType==='gain'&&p.goal<p.weight){err.textContent='เป้าหมายเพิ่มกล้าม น้ำหนักเป้าหมายควรเท่ากับหรือมากกว่าตอนนี้';break}
      OB.p=p; OB.t=null; showOB(2); break;}
    case 'ob2':{
      const k=gv('oK'), err=document.getElementById('oErr');
@@ -1259,7 +1284,7 @@ document.addEventListener('input',e=>{
   if(id==='q'&&ADD){ADD.q=e.target.value;drawAdd()}
   if(id==='oK'&&OB)obGuide();
   if(['pK','pP','pWa'].includes(id))e.target.dataset.touched='1';
-  if(['pAge','pH','pW','pG'].includes(id))recalcProfile();
+  if(['pAge','pH','pW','pG','pA','pGoalT'].includes(id))recalcProfile();
 });
 document.addEventListener('change',async e=>{
   if(e.target.id==='imgBg'){IMGBG=e.target.checked;return}

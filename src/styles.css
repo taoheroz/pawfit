@@ -406,3 +406,11 @@ body:has(.ob:not([hidden])) .toast{z-index:80}
 .iosbar.top{justify-content:flex-start;gap:10px;padding:0 6px 0 14px;margin:6px 8px 26px}
 .iosbar.top .url{flex:1;font-size:13px;color:var(--muted);text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .iosbar.top .arrow{top:auto;bottom:-24px;left:auto;right:53px}
+/* onboarding goal cards */
+.goals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.goalc{display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:12px;border-radius:16px;background:var(--surface);box-shadow:var(--sh-1);text-align:left;transition:transform .15s}
+.goalc b{font-weight:600;font-size:14.5px}
+.goalc span{font-size:12.5px;color:var(--muted);line-height:1.4}
+.goalc.on{box-shadow:0 0 0 2.5px var(--leaf),var(--sh-1)}
+.goalc:active{transform:scale(.97)}
+.ring .lab.wb{color:var(--leaf);font-weight:600;font-size:11px}
