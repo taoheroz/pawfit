@@ -1,6 +1,6 @@
 import './styles.css';
 import { BUNDLED_IMAGES } from './generated/images.js';
-import { setupPWA, isIOS, isInstalled } from './pwa.js';
+import { setupPWA, isIOS, isInstalled, inAppBrowser, installMode, promptInstall } from './pwa.js';
 
 /* ================= data ================= */
 const FOODS=[
@@ -513,8 +513,8 @@ function vToday(){
   return `
   <header class="top"><div><div class="eyebrow">${thDate(CUR)}</div><h1>${today?'วันนี้ค่อย ๆ ไปทีละนิด':'ย้อนดูวันก่อน'}</h1></div></header>
   ${dateBar()}${pastBanner()}
-  ${today&&isIOS()&&!isInstalled()&&!S.installHide?`<div class="banner"><div style="flex:1"><b>ติดตั้ง PawFit ลงหน้าจอโฮม</b> จะเปิดเต็มจอ ใช้ออฟไลน์ได้ และข้อมูลไม่หาย</div><button class="btn small" data-act="installHelp">วิธีติดตั้ง</button></div>`:''}
-  ${S.example&&today&&!(isIOS()&&!isInstalled()&&!S.installHide)?`<div class="banner"><div style="flex:1">ตอนนี้เป็น<b>ข้อมูลตัวอย่าง</b> ลองกดเล่นได้เลย</div><button class="btn small" data-act="onboard">เริ่มของฉัน</button></div>`:''}
+  ${today&&showInstall()?installBanner():''}
+  ${S.example&&today&&!showInstall()?`<div class="banner"><div style="flex:1">ตอนนี้เป็น<b>ข้อมูลตัวอย่าง</b> ลองกดเล่นได้เลย</div><button class="btn small" data-act="onboard">เริ่มของฉัน</button></div>`:''}
   ${ad&&!S.example?`<div class="banner"><span style="flex:1">ผู้ช่วยปรับเป้ามีคำแนะนำใหม่ เป้าแคลที่ตรงกับร่างกายเธอมากขึ้น</span><button class="btn small" data-tab="body">ดูเลย</button></div>`:''}
   ${today?stageHTML():''}
   <section class="card quick" aria-label="ทางลัด"><div class="row-between"><h2>แตะเดียวบันทึก</h2><button class="chip" data-act="add" data-meal="${autoMeal()}">+ เมนูอื่น</button></div>
@@ -664,6 +664,7 @@ function vBody(){
    <p class="small muted">ใส่ภาพที่เจนจาก AI แทนภาพวาดในแอป เลือกหลายไฟล์ได้ทีเดียว ระบบจับคู่จากชื่อไฟล์ให้</p>
    <div class="slots mini">${allSlots().filter(k=>IMGURL[k]).slice(0,6).map(k=>`<div class="sp">${slotPreview(k)}</div>`).join('')}</div>
    <button class="btn" data-act="imgSheet">จัดการภาพประกอบ</button></section>
+  ${installMode()?`<section class="card"><div class="row-between"><h2>ติดตั้งลงหน้าจอโฮม</h2><span class="pill">ยังไม่ได้ติดตั้ง</span></div><p class="small muted">เปิดเต็มจอ ใช้ออฟไลน์ได้ และเก็บข้อมูลได้มั่นคงกว่าในเบราว์เซอร์</p><button class="btn" data-act="installHelp">${installMode()==='prompt'?'ติดตั้งเลย':'ดูวิธีติดตั้ง'}</button></section>`:''}
   <section class="card"><div class="row-between"><h2>สำรองข้อมูล</h2><span class="pill ${bk===null||bk>7?'':'p'}">${bk===null?'ยังไม่เคยสำรอง':bk===0?'สำรองวันนี้แล้ว':`สำรองล่าสุด ${bk} วันก่อน`}</span></div>
    <p class="small muted">ข้อมูลเก็บในเครื่องนี้เท่านั้น ถ้าลบแอปหรือเปลี่ยนมือถือจะหาย ส่งไฟล์สำรองเข้า LINE ตัวเองหรือเก็บในแอปไฟล์ไว้ สัปดาห์ละครั้ง</p>
    <div class="btns"><button class="btn" data-act="backupFile">${IC.share} ส่งไฟล์สำรอง</button><button class="btn ghost" data-act="restoreSheet">กู้คืนข้อมูล</button></div>
@@ -936,14 +937,36 @@ async function addImages(pairs){
   }
   return {ok,bad};
 }
+/* install to home screen: one-tap prompt on Android, picture steps on iPhone, "open in Safari/Chrome first" inside LINE/Facebook */
+const showInstall=()=>!S.installHide&&!!installMode();
+function installBanner(){
+  const m=installMode();
+  const [txt,btn]=m==='prompt'?['<b>ติดตั้ง PawFit ลงหน้าจอโฮม</b> กดครั้งเดียว เปิดเต็มจอ ใช้ออฟไลน์ได้','<button class="btn small" data-act="installNow">ติดตั้งเลย</button>']
+   :m==='inapp'?[`<b>เปิดใน${isIOS()?' Safari ':' Chrome '}ก่อนนะ</b> ในแอป ${inAppBrowser()} ติดตั้งลงหน้าจอโฮมไม่ได้`,'<button class="btn small" data-act="installHelp">วิธีเปิด</button>']
+   :['<b>ติดตั้ง PawFit ลงหน้าจอโฮม</b> จะเปิดเต็มจอ ใช้ออฟไลน์ได้ และข้อมูลไม่หาย','<button class="btn small" data-act="installHelp">ดูวิธี</button>'];
+  return `<div class="banner"><div style="flex:1">${txt}</div>${btn}</div>`;
+}
+const stepN=n=>`<span class="check" style="border:0;background:var(--leaf);color:var(--leaf-ink)">${n}</span>`;
+const IC_ADDHOME='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
 function installSheet(){
-  openSheet('ติดตั้งลงหน้าจอโฮม',`<div class="card flat" style="gap:10px">
-   <div class="quest"><span class="check" style="border:0;background:var(--leaf);color:var(--leaf-ink)">1</span><span>เปิดลิงก์นี้ใน <b>Safari</b></span></div>
-   <div class="quest"><span class="check" style="border:0;background:var(--leaf);color:var(--leaf-ink)">2</span><span>แตะปุ่มแชร์ ${IC.share} ที่แถบด้านล่าง</span></div>
-   <div class="quest"><span class="check" style="border:0;background:var(--leaf);color:var(--leaf-ink)">3</span><span>เลื่อนลงแล้วแตะ <b>เพิ่มไปยังหน้าจอโฮม</b></span></div>
-   <div class="quest"><span class="check" style="border:0;background:var(--leaf);color:var(--leaf-ink)">4</span><span>แตะ <b>เพิ่ม</b> แล้วเปิด PawFit จากไอคอนน้องแมว</span></div></div>
-   <p class="small muted">ข้อควรรู้: ข้อมูลในแอปบนหน้าจอโฮมแยกจากใน Safari ถ้าเคยลองใช้ใน Safari มาก่อน ให้ส่งไฟล์สำรองจาก Safari แล้วกู้คืนในแอปที่ติดตั้ง</p>
-   <div class="btns"><button class="btn" data-act="close">เข้าใจแล้ว</button><button class="btn ghost" data-act="installHide">ไม่ต้องแสดงอีก</button></div>`);
+  const m=installMode(), foot=`<div class="btns"><button class="btn" data-act="close">เข้าใจแล้ว</button>${S.installHide?'':'<button class="btn ghost" data-act="installHide">ไม่ต้องแสดงอีก</button>'}</div>`;
+  if(m==='inapp'){
+    const br=isIOS()?'Safari':'Chrome';
+    return openSheet(`เปิดใน ${br} ก่อน`,`<p class="small muted">ตอนนี้เปิดอยู่ในแอป ${inAppBrowser()} ซึ่งติดตั้งลงหน้าจอโฮมไม่ได้ ต้องย้ายไปเปิดใน ${br} ก่อน</p>
+     <div class="card flat" style="gap:10px">
+      <div class="quest">${stepN(1)}<span>แตะปุ่ม <b>•••</b> หรือไอคอนเข็มทิศ มุมขวาบนหรือล่าง</span></div>
+      <div class="quest">${stepN(2)}<span>เลือก <b>เปิดใน${isIOS()?'เบราว์เซอร์ / Safari':'เบราว์เซอร์ / Chrome'}</b></span></div>
+      <div class="quest">${stepN(3)}<span>หาไม่เจอ? คัดลอกลิงก์ แล้วไปวางใน ${br} เองได้</span></div></div>
+     <button class="btn ghost" data-act="copyLink">คัดลอกลิงก์</button>${foot}`);
+  }
+  if(m==='prompt') return promptInstall().then(o=>{if(o==='accepted')toast('ติดตั้งแล้ว เปิด PawFit จากหน้าจอโฮมได้เลย');render()});
+  openSheet('ติดตั้งลงหน้าจอโฮม',`<div class="iosbar" aria-hidden="true"><span>‹</span><span>›</span><span class="hl">${IC.share}</span><span>•••</span><i class="arrow">↓</i></div>
+   <p class="small muted" style="text-align:center;margin-top:-4px">ปุ่มแชร์อยู่ที่แถบล่างของ Safari (iPad อยู่มุมขวาบน)</p>
+   <div class="card flat" style="gap:10px">
+   <div class="quest">${stepN(1)}<span>แตะปุ่มแชร์ <span class="ico">${IC.share}</span> ถ้าไม่เห็น ให้แตะ <b>•••</b> ก่อนแล้วเลือก <b>แชร์</b></span></div>
+   <div class="quest">${stepN(2)}<span>เลื่อนลง แตะ <span class="menuitem">เพิ่มไปยังหน้าจอโฮม ${IC_ADDHOME}</span></span></div>
+   <div class="quest">${stepN(3)}<span>แตะ <b>เพิ่ม</b> มุมขวาบน แล้วเปิด PawFit จากไอคอนบนหน้าจอโฮม</span></div></div>
+   <p class="small muted">ข้อควรรู้: ข้อมูลในแอปบนหน้าจอโฮมแยกจากใน Safari ถ้าเคยลองใช้ใน Safari มาก่อน ให้ส่งไฟล์สำรองจาก Safari แล้วกู้คืนในแอปที่ติดตั้ง</p>${foot}`);
 }
 const HEALTH_SHORTCUT='PawFit Health';
 function healthSheet(msg=''){
@@ -1126,7 +1149,8 @@ document.addEventListener('click',e=>{
      try{navigator.clipboard.writeText(code).then(done,fallback)}catch(err){fallback()}
      break;}
    case 'restoreSheet': restoreSheet(); break;
-   case 'installHelp': installSheet(); break;
+   case 'installHelp': case 'installNow': installSheet(); break;
+   case 'copyLink': navigator.clipboard?.writeText(location.href).then(()=>toast('คัดลอกลิงก์แล้ว'),()=>toast(location.href)); break;
    case 'installHide': S.installHide=true; save(); closeSheet(); render(); break;
    case 'health': healthSheet(); break;
    case 'healthSetup': healthSetupSheet(); break;
@@ -1241,4 +1265,4 @@ render(true);
 if(!S.onboarded&&!S.obSeen) showOB(0);
 loadImgs().then(()=>{if(Object.keys(IMGURL).length){render();if(!document.getElementById('ob').hidden&&OB)drawOB()}});
 
-setupPWA();
+setupPWA(()=>render());
