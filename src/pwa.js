@@ -33,3 +33,6 @@ export async function promptInstall() {
   const { outcome } = await e.userChoice;
   return outcome; // 'accepted' | 'dismissed'
 }
+
+// The app's home link. LINE opens links carrying openExternalBrowser=1 straight in Safari/Chrome instead of its own browser.
+export const externalLink = () => `${location.origin}${import.meta.env.BASE_URL}?openExternalBrowser=1`;

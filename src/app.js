@@ -1,6 +1,6 @@
 import './styles.css';
 import { BUNDLED_IMAGES } from './generated/images.js';
-import { setupPWA, isIOS, isInstalled, inAppBrowser, installMode, promptInstall } from './pwa.js';
+import { setupPWA, isIOS, isInstalled, inAppBrowser, installMode, promptInstall, externalLink } from './pwa.js';
 
 /* ================= data ================= */
 const FOODS=[
@@ -665,6 +665,7 @@ function vBody(){
    <div class="slots mini">${allSlots().filter(k=>IMGURL[k]).slice(0,6).map(k=>`<div class="sp">${slotPreview(k)}</div>`).join('')}</div>
    <button class="btn" data-act="imgSheet">จัดการภาพประกอบ</button></section>
   ${installMode()?`<section class="card"><div class="row-between"><h2>ติดตั้งลงหน้าจอโฮม</h2><span class="pill">ยังไม่ได้ติดตั้ง</span></div><p class="small muted">เปิดเต็มจอ ใช้ออฟไลน์ได้ และเก็บข้อมูลได้มั่นคงกว่าในเบราว์เซอร์</p><button class="btn" data-act="installHelp">${installMode()==='prompt'?'ติดตั้งเลย':'ดูวิธีติดตั้ง'}</button></section>`:''}
+  <section class="card"><h2>ชวนเพื่อนมาใช้</h2><p class="small muted">ส่งลิงก์นี้ใน LINE ได้เลย เพื่อนกดแล้วจะเปิดใน Safari หรือ Chrome ให้เอง ติดตั้งลงหน้าจอโฮมต่อได้ทันที ข้อมูลของแต่ละคนอยู่ในมือถือของตัวเอง</p><button class="btn ghost" data-act="shareLink">${IC.share} ส่งลิงก์ให้เพื่อน</button></section>
   <section class="card"><div class="row-between"><h2>สำรองข้อมูล</h2><span class="pill ${bk===null||bk>7?'':'p'}">${bk===null?'ยังไม่เคยสำรอง':bk===0?'สำรองวันนี้แล้ว':`สำรองล่าสุด ${bk} วันก่อน`}</span></div>
    <p class="small muted">ข้อมูลเก็บในเครื่องนี้เท่านั้น ถ้าลบแอปหรือเปลี่ยนมือถือจะหาย ส่งไฟล์สำรองเข้า LINE ตัวเองหรือเก็บในแอปไฟล์ไว้ สัปดาห์ละครั้ง</p>
    <div class="btns"><button class="btn" data-act="backupFile">${IC.share} ส่งไฟล์สำรอง</button><button class="btn ghost" data-act="restoreSheet">กู้คืนข้อมูล</button></div>
@@ -718,7 +719,7 @@ function drawOB(){
   if(s===0) body=`<div style="text-align:center;display:flex;flex-direction:column;gap:10px;margin-top:auto">
     <div class="hero-cat">${imgSrc('hero_welcome')?`<img src="${imgSrc('hero_welcome')}" alt="" style="width:100%">`:petSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}})}</div>
     <h1>PawFit</h1><p class="muted">ดูแลสุขภาพทีละนิด พร้อมเพื่อนตัวน้อยที่โตไปกับเธอ<br>นับแคล โปรตีน ออกกำลังแบบไม่กดดัน</p></div>
-   <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto"><button class="btn block" data-act="ob" data-v="1">เริ่มตั้งค่าของฉัน</button><button class="btn ghost block" data-act="obSkip">ขอดูตัวอย่างก่อน</button></div>`;
+   <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">${installMode()?obInstall():''}<button class="btn block${installMode()?' ghost':''}" data-act="ob" data-v="1">เริ่มตั้งค่าของฉัน</button><button class="btn ghost block" data-act="obSkip">ขอดูตัวอย่างก่อน</button></div>`;
   else if(s===1) body=`${dots}<div><div class="eyebrow">ขั้นที่ 1 จาก 3</div><h1>เล่าเรื่องร่างกายให้ฟังหน่อย</h1><p class="muted small">ใช้คำนวณเป้าที่พอดีกับเธอ ข้อมูลอยู่ในเครื่องนี้เท่านั้น</p></div>
    <div class="seg-ctl" role="group" aria-label="เพศ"><button type="button" class="${p.sex==='f'?'on':''}" data-act="obSex" data-v="f">หญิง</button><button type="button" class="${p.sex==='m'?'on':''}" data-act="obSex" data-v="m">ชาย</button></div>
    <div class="grid2"><label class="field" for="oAge">อายุ (ปี)<input id="oAge" type="number" inputmode="numeric" value="${p.age}"></label><label class="field" for="oH">ส่วนสูง (ซม.)<input id="oH" type="number" inputmode="numeric" value="${p.height}"></label>
@@ -942,9 +943,17 @@ const showInstall=()=>!S.installHide&&!!installMode();
 function installBanner(){
   const m=installMode();
   const [txt,btn]=m==='prompt'?['<b>ติดตั้ง PawFit ลงหน้าจอโฮม</b> กดครั้งเดียว เปิดเต็มจอ ใช้ออฟไลน์ได้','<button class="btn small" data-act="installNow">ติดตั้งเลย</button>']
-   :m==='inapp'?[`<b>เปิดใน${isIOS()?' Safari ':' Chrome '}ก่อนนะ</b> ในแอป ${inAppBrowser()} ติดตั้งลงหน้าจอโฮมไม่ได้`,'<button class="btn small" data-act="installHelp">วิธีเปิด</button>']
+   :m==='inapp'?[`<b>เปิดใน${isIOS()?' Safari ':' Chrome '}ก่อนนะ</b> ในแอป ${inAppBrowser()} ติดตั้งลงหน้าจอโฮมไม่ได้`,inAppBrowser()==='LINE'?`<button class="btn small" data-act="openExternal">เปิดใน${isIOS()?' Safari':' Chrome'}</button>`:'<button class="btn small" data-act="installHelp">วิธีเปิด</button>']
    :['<b>ติดตั้ง PawFit ลงหน้าจอโฮม</b> จะเปิดเต็มจอ ใช้ออฟไลน์ได้ และข้อมูลไม่หาย','<button class="btn small" data-act="installHelp">ดูวิธี</button>'];
   return `<div class="banner"><div style="flex:1">${txt}</div>${btn}</div>`;
+}
+/* welcome screen: install first, because on iPhone the home-screen app does not share data with Safari */
+function obInstall(){
+  const m=installMode(), lineApp=inAppBrowser()==='LINE', br=isIOS()?'Safari':'Chrome';
+  const [txt,btn]=m==='prompt'?['ติดตั้งก่อนเริ่ม จะได้เปิดจากหน้าจอโฮมได้ทุกวัน','<button class="btn block" data-act="installNow">ติดตั้งลงหน้าจอโฮม</button>']
+   :m==='inapp'?[`ตอนนี้เปิดอยู่ใน ${inAppBrowser()} ซึ่งติดตั้งไม่ได้ เปิดใน ${br} ก่อนนะ`,lineApp?`<button class="btn block" data-act="openExternal">เปิดใน ${br}</button>`:'<button class="btn block" data-act="installHelp">ดูวิธีเปิด</button>']
+   :['ติดตั้งก่อนเริ่ม ข้อมูลจะได้ไม่หาย ข้อมูลใน Safari กับในแอปบนหน้าจอโฮมแยกกัน','<button class="btn block" data-act="installHelp">ดูวิธีติดตั้ง (3 ขั้น)</button>'];
+  return `<div class="obinstall"><p class="small">${txt}</p>${btn}</div>`;
 }
 const stepN=n=>`<span class="check" style="border:0;background:var(--leaf);color:var(--leaf-ink)">${n}</span>`;
 const IC_ADDHOME='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8.5v7M8.5 12h7"/></svg>';
@@ -953,13 +962,14 @@ function installSheet(){
   if(m==='inapp'){
     const br=isIOS()?'Safari':'Chrome';
     return openSheet(`เปิดใน ${br} ก่อน`,`<p class="small muted">ตอนนี้เปิดอยู่ในแอป ${inAppBrowser()} ซึ่งติดตั้งลงหน้าจอโฮมไม่ได้ ต้องย้ายไปเปิดใน ${br} ก่อน</p>
+     ${inAppBrowser()==='LINE'?`<button class="btn" data-act="openExternal">เปิดใน ${br} เลย</button><p class="small muted" style="text-align:center">ถ้ากดแล้วไม่เปิด ทำตามขั้นด้านล่างแทน</p>`:''}
      <div class="card flat" style="gap:10px">
       <div class="quest">${stepN(1)}<span>แตะปุ่ม <b>•••</b> หรือไอคอนเข็มทิศ มุมขวาบนหรือล่าง</span></div>
       <div class="quest">${stepN(2)}<span>เลือก <b>เปิดใน${isIOS()?'เบราว์เซอร์ / Safari':'เบราว์เซอร์ / Chrome'}</b></span></div>
       <div class="quest">${stepN(3)}<span>หาไม่เจอ? คัดลอกลิงก์ แล้วไปวางใน ${br} เองได้</span></div></div>
      <button class="btn ghost" data-act="copyLink">คัดลอกลิงก์</button>${foot}`);
   }
-  if(m==='prompt') return promptInstall().then(o=>{if(o==='accepted')toast('ติดตั้งแล้ว เปิด PawFit จากหน้าจอโฮมได้เลย');render()});
+  if(m==='prompt') return promptInstall().then(o=>{if(o==='accepted')toast('ติดตั้งแล้ว เปิด PawFit จากหน้าจอโฮมได้เลย');refreshInstall()});
   openSheet('ติดตั้งลงหน้าจอโฮม',`<div class="iosbar" aria-hidden="true"><span>‹</span><span>›</span><span class="hl">${IC.share}</span><span>•••</span><i class="arrow">↓</i></div>
    <p class="small muted" style="text-align:center;margin-top:-4px">ปุ่มแชร์อยู่ที่แถบล่างของ Safari (iPad อยู่มุมขวาบน)</p>
    <div class="card flat" style="gap:10px">
@@ -1150,7 +1160,11 @@ document.addEventListener('click',e=>{
      break;}
    case 'restoreSheet': restoreSheet(); break;
    case 'installHelp': case 'installNow': installSheet(); break;
-   case 'copyLink': navigator.clipboard?.writeText(location.href).then(()=>toast('คัดลอกลิงก์แล้ว'),()=>toast(location.href)); break;
+   case 'openExternal': location.href=externalLink(); break;
+   case 'shareLink':{const url=externalLink(), text='มาดูแลสุขภาพด้วยกันใน PawFit นับแคล ออกกำลัง แล้วเลี้ยงน้องตัวน้อยไปด้วย';
+     if(navigator.share) navigator.share({title:'PawFit',text,url}).catch(()=>{});
+     else navigator.clipboard?.writeText(url).then(()=>toast('คัดลอกลิงก์แล้ว ส่งให้เพื่อนได้เลย'),()=>toast(url)); break;}
+   case 'copyLink': navigator.clipboard?.writeText(externalLink()).then(()=>toast('คัดลอกลิงก์แล้ว'),()=>toast(externalLink())); break;
    case 'installHide': S.installHide=true; save(); closeSheet(); render(); break;
    case 'health': healthSheet(); break;
    case 'healthSetup': healthSetupSheet(); break;
@@ -1265,4 +1279,5 @@ render(true);
 if(!S.onboarded&&!S.obSeen) showOB(0);
 loadImgs().then(()=>{if(Object.keys(IMGURL).length){render();if(!document.getElementById('ob').hidden&&OB)drawOB()}});
 
-setupPWA(()=>render());
+const refreshInstall=()=>{render();if(OB&&OB.step===0&&!document.getElementById('ob').hidden)drawOB()};
+setupPWA(refreshInstall);

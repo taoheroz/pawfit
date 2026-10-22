@@ -397,3 +397,9 @@ label.btn{cursor:pointer}
 @keyframes nudge{50%{transform:translateY(5px)}}
 @keyframes pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--leaf) 35%,transparent)}}
 @media (prefers-reduced-motion:reduce){.iosbar .hl,.iosbar .arrow{animation:none}}
+.obinstall{display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:18px;background:var(--leaf-soft);text-align:center}
+.obinstall p{margin:0}
+/* sheets opened from the welcome screen must sit above it */
+body:has(.ob:not([hidden])) .scrim{z-index:71}
+body:has(.ob:not([hidden])) .sheet{z-index:72}
+body:has(.ob:not([hidden])) .toast{z-index:80}
