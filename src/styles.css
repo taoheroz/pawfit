@@ -81,9 +81,9 @@ p{margin:0}
 @keyframes drift{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4%,-3%) scale(1.06)}}
 
 /* pet stage */
-.stage{position:relative;overflow:hidden;border-radius:26px;padding:14px 14px 10px;display:grid;grid-template-columns:132px 1fr;gap:6px 10px;align-items:center;
+.stage{position:relative;overflow:hidden;border-radius:26px;padding:12px 14px 10px;display:grid;grid-template-columns:104px 1fr;gap:6px 10px;align-items:center;
   background:radial-gradient(120% 90% at 0% 100%,color-mix(in srgb,var(--leaf) 30%,transparent),transparent 60%),radial-gradient(90% 80% at 100% 0%,color-mix(in srgb,var(--sun) 35%,transparent),transparent 60%),var(--leaf-soft);box-shadow:var(--sh-1)}
-.stage .cat{width:132px}
+.stage .cat{width:104px}
 .bubble{position:relative;background:var(--surface);border-radius:16px;padding:9px 12px;font-size:14px;box-shadow:var(--sh-1)}
 .bubble::before{content:"";position:absolute;left:-6px;bottom:16px;width:14px;height:14px;background:var(--surface);transform:rotate(45deg);border-radius:3px}
 .stage-meta{display:flex;flex-direction:column;gap:8px;min-width:0}

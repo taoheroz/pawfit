@@ -487,7 +487,7 @@ const IC={
  heart:sv('<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',18),
  share:sv('<path d="M12 3v12M8 7l4-4 4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',18),
  spark:sv('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',20)};
-const TABS=()=>[['today','วันนี้'],['food','อาหาร'],['train','ออกกำลัง'],['body','ร่างกาย'],['pet','น้อง'+petWord()]];
+const TABS=()=>[['today','วันนี้'],['train','ออกกำลัง'],['food','อาหาร'],['body','ร่างกาย'],['pet','น้อง'+petWord()]];
 
 /* ================= advice ================= */
 function advice(){
@@ -531,6 +531,11 @@ function vToday(){
   ${today&&showInstall()?installBanner():''}
   ${S.example&&today&&!showInstall()?`<div class="banner"><div style="flex:1">ตอนนี้เป็น<b>ข้อมูลตัวอย่าง</b> ลองกดเล่นได้เลย</div><button class="btn small" data-act="onboard">เริ่มของฉัน</button></div>`:''}
   ${ad&&!S.example?`<div class="banner"><span style="flex:1">ผู้ช่วยปรับเป้ามีคำแนะนำใหม่ เป้าแคลที่ตรงกับร่างกายเธอมากขึ้น</span><button class="btn small" data-tab="body">ดูเลย</button></div>`:''}
+  ${today?(comeback?`<section class="card comeback"><span class="eyebrow">${lw===null?'ยังไม่เคยเริ่ม':`ห่างจากการออกกำลังมา ${lw} วัน`}</span><h2>ไม่เป็นไรเลย กลับมาแบบเบา ๆ กัน</h2>
+    <p class="muted small">ครั้งถัดไป: ${nx.title} · ${nx.min} นาที หรือวันนี้ขอแค่ 10 นาทีก็นับแล้ว</p>
+    <div class="btns"><button class="btn" data-act="session">เริ่ม ${nx.title}</button><button class="btn ghost" data-act="mini">แค่ 10 นาที</button></div></section>`
+   :`<section class="card"><div class="row-between"><h2>ออกกำลังครั้งถัดไป</h2><span class="pill">สัปดาห์ ${nx.week}</span></div><p class="muted small">${nx.title} · ${nx.min} นาที</p><button class="btn block" data-act="session">เริ่มเลย</button></section>`)
+   :`<section class="card"><h2>ลืมบันทึกออกกำลังวันนั้น?</h2><div class="btns"><button class="btn ghost" data-act="finish">${nx.title} ครั้งที่ ${nx.i+1}</button><button class="btn ghost" data-act="finishMini">10 นาที</button><button class="btn ghost" data-act="finishStretch">ยืดเหยียด</button></div></section>`}
   ${today?stageHTML():''}
   <section class="card quick" aria-label="ทางลัด"><div class="row-between"><h2>แตะเดียวบันทึก</h2><button class="chip" data-act="add" data-meal="${autoMeal()}">+ เมนูอื่น</button></div>
    <div class="chips">${favs.map(f=>`<button class="fav" data-act="quick" data-id="${f.id}">${foodImg(f.art,32)}<span>${esc(f.name)} <span class="k num">${f.kcal}</span></span><span class="p" aria-hidden="true">+</span></button>`).join('')||'<span class="small muted">กดดาวในหน้าเพิ่มอาหาร เพื่อตั้งเมนูประจำ</span>'}</div>
@@ -553,11 +558,6 @@ function vToday(){
    </div></section>
   <section class="card tint-sun"><h2>${today?'ควรกินอะไรต่อดี':'เติมเมนูที่ลืม'}</h2><p class="muted small">${adv.msg}</p>
    <div class="reco">${adv.picks.map(f=>`<button class="reco-item" data-act="quick" data-id="${f.id}">${foodImg(f.art,52)}<span class="n"><b>${esc(f.name)}</b><span class="pill p">โปรตีน ${r1(f.p)} g</span> <span class="pill num">${f.kcal} kcal</span></span><span class="plus" aria-hidden="true">+</span></button>`).join('')}</div></section>
-  ${today?(comeback?`<section class="card comeback"><span class="eyebrow">${lw===null?'ยังไม่เคยเริ่ม':`ห่างจากการออกกำลังมา ${lw} วัน`}</span><h2>ไม่เป็นไรเลย กลับมาแบบเบา ๆ กัน</h2>
-    <p class="muted small">ครั้งถัดไป: ${nx.title} · ${nx.min} นาที หรือวันนี้ขอแค่ 10 นาทีก็นับแล้ว</p>
-    <div class="btns"><button class="btn" data-act="session">เริ่ม ${nx.title}</button><button class="btn ghost" data-act="mini">แค่ 10 นาที</button></div></section>`
-   :`<section class="card"><div class="row-between"><h2>ออกกำลังครั้งถัดไป</h2><span class="pill">สัปดาห์ ${nx.week}</span></div><p class="muted small">${nx.title} · ${nx.min} นาที</p><button class="btn block" data-act="session">เริ่มเลย</button></section>`)
-   :`<section class="card"><h2>ลืมบันทึกออกกำลังวันนั้น?</h2><div class="btns"><button class="btn ghost" data-act="finish">${nx.title} ครั้งที่ ${nx.i+1}</button><button class="btn ghost" data-act="finishMini">10 นาที</button><button class="btn ghost" data-act="finishStretch">ยืดเหยียด</button></div></section>`}
   <details class="card" id="moreBox" ${MORE_OPEN?'open':''}><summary><span><b style="font-family:var(--f-display);font-weight:500;font-size:17px">ภารกิจและบอสสัปดาห์</b> <span class="pill num">${qd}/3</span></span><span class="chev">${IC.chev}</span></summary>
    <div class="more-in">
     <div style="display:flex;flex-direction:column;gap:6px">${qs.map(q=>{const ok=q.ok(d,t,T);return `<div class="quest ${ok?'done':''}"><span class="check">${ok?IC.check:''}</span><span>${q.t(T)}</span></div>`}).join('')}
@@ -733,7 +733,7 @@ function drawOB(){
   let body='';
   if(s===0) body=`<div style="text-align:center;display:flex;flex-direction:column;gap:10px;margin-top:auto">
     <div class="hero-cat">${imgSrc('hero_welcome')?`<img src="${imgSrc('hero_welcome')}" alt="" style="width:100%">`:petSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}})}</div>
-    <h1>PawFit</h1><p class="muted">ดูแลสุขภาพทีละนิด พร้อมเพื่อนตัวน้อยที่โตไปกับเธอ<br>นับแคล โปรตีน ออกกำลังแบบไม่กดดัน</p></div>
+    <h1>PawFit</h1><p class="muted">ออกกำลังแบบกลับมาเริ่มใหม่ได้เสมอ<br>กินให้พอดีกับเป้า มีเพื่อนตัวน้อยคอยเชียร์</p></div>
    <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto">${installMode()?obInstall():''}<button class="btn block${installMode()?' ghost':''}" data-act="ob" data-v="1">เริ่มตั้งค่าของฉัน</button><button class="btn ghost block" data-act="obSkip">ขอดูตัวอย่างก่อน</button></div>`;
   else if(s===1) body=`${dots}<div><div class="eyebrow">ขั้นที่ 1 จาก 3</div><h1>อยากไปทางไหนดี</h1><p class="muted small">ใช้คำนวณแคลกับโปรตีนให้พอดีกับเป้าหมาย ข้อมูลอยู่ในเครื่องนี้เท่านั้น</p></div>
    <div class="goals" role="group" aria-label="เป้าหมาย">${Object.entries(GOALS).map(([k,g])=>`<button type="button" class="goalc ${p.goalType===k?'on':''}" data-act="obGoal" data-v="${k}" aria-pressed="${p.goalType===k}"><b>${g.label}</b><span>${g.sub}</span></button>`).join('')}</div>
