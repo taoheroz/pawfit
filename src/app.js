@@ -215,6 +215,37 @@ const SKINS={cat:{orange:{name:'ส้มลายเสือ',b:'#F2A65A',bl:'
  cream:{name:'ขาวครีม',b:'#F7EFE3',bl:'#FFFDF8',st:'#E2D4BF',ear:'#F6BDB8',eye:'#3A2A20',tail:'#FFFFFF',wh:'#C9B89F'},
  black:{name:'ดำนิล',b:'#3B3B43',bl:'#55555F',st:'#2A2A30',ear:'#E39AA6',eye:'#F4D35E',tail:'#EDEDF0',wh:'#8A8A95'}}};
 const skinsOf=k=>SKINS[k]||SKINS.cat;
+/* pet room: one item per spot (wall, floor left/right, mat, toy), bought with the same coins as outfits.
+   Items with "play" make the pet do that move when tapped. An AI image named room_<id> replaces the drawing. */
+const ROOM=[{id:'plant',spot:'fl',name:'ต้นไม้',price:40},{id:'bag',spot:'fl',name:'กระสอบทราย',price:150,play:'punch'},
+ {id:'bed',spot:'fr',name:'เบาะนอนนุ่ม',price:60,play:'nap'},{id:'tread',spot:'fr',name:'ลู่วิ่งจิ๋ว',price:180,play:'run'},
+ {id:'rug',spot:'mat',name:'พรมกลม',price:30},{id:'yoga',spot:'mat',name:'เสื่อโยคะ',price:70,play:'stretch'},
+ {id:'poster',spot:'wall',name:'โปสเตอร์ให้กำลังใจ',price:35},{id:'rack',spot:'wall',name:'ชั้นวางดัมเบล',price:120},
+ {id:'ball',spot:'toy',name:'ลูกบอล',price:25,play:'ball'},{id:'bottle',spot:'toy',name:'ขวดน้ำ',price:20,play:'drink'}];
+const SPOTS={wall:'ผนัง',fl:'พื้นซ้าย',fr:'พื้นขวา',mat:'พรม',toy:'ข้างตัว'};
+const PLAY_LINES={run:'วิ่งเหยาะ ๆ ก่อนนะ วันนี้เธอได้ขยับหรือยัง?',punch:'ปึ้ก ๆ! ระบายเครียดเสร็จ ไปเล่นเวทกัน',stretch:'ยืดหลังหน่อย หลังเลิกงานยืดสัก 5 นาทีก็ดีนะ',
+ nap:'งีบแป๊บ… นอนให้พอ 7 ชม. กล้ามถึงจะโตนะ',ball:'โยนมาอีก! ขยับวันละนิดก็นับแล้ว',drink:'อึก ๆ ดื่มน้ำหน่อย วันนี้ดื่มครบหรือยัง?'};
+const RO='#7A5238';
+const ROOM_SVG={
+ plant:'<svg viewBox="0 0 60 80"><path d="M30 46q-18-6-20-26q16 2 20 20M30 46q16-8 22-28q-18 4-22 22M30 46q-2-20 6-40q8 18-6 40" fill="#7BC08A" stroke="'+RO+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M16 46h28l-4 30H20z" fill="#E59A6B" stroke="'+RO+'" stroke-width="2.4" stroke-linejoin="round"/></svg>',
+ bag:'<svg viewBox="0 0 60 100"><path d="M30 2v10" stroke="#5A6470" stroke-width="3"/><rect x="14" y="12" width="32" height="64" rx="14" fill="#D2463A" stroke="'+RO+'" stroke-width="2.4"/><path d="M14 30h32M14 58h32" stroke="#B83A30" stroke-width="3"/><path d="M30 76v12M16 96h28" stroke="#5A6470" stroke-width="4" stroke-linecap="round"/></svg>',
+ bed:'<svg viewBox="0 0 100 50"><ellipse cx="50" cy="32" rx="46" ry="16" fill="#8FB7E8" stroke="'+RO+'" stroke-width="2.4"/><ellipse cx="50" cy="28" rx="34" ry="10" fill="#CFE2F7"/></svg>',
+ tread:'<svg viewBox="0 0 100 70"><path d="M78 8l6 40" stroke="#3E4A57" stroke-width="5" stroke-linecap="round"/><rect x="70" y="4" width="18" height="8" rx="3" fill="#4FC2D8" stroke="'+RO+'" stroke-width="2"/><path d="M8 52l80-6" stroke="#2E3440" stroke-width="12" stroke-linecap="round"/><path d="M8 52l80-6" stroke="#5A6470" stroke-width="5" stroke-linecap="round" stroke-dasharray="6 5"/><circle cx="12" cy="60" r="5" fill="#3E4A57"/><circle cx="84" cy="55" r="5" fill="#3E4A57"/></svg>',
+ rug:'<svg viewBox="0 0 200 50"><ellipse cx="100" cy="25" rx="96" ry="21" fill="#F2C9B8" stroke="'+RO+'" stroke-width="2.4"/><ellipse cx="100" cy="25" rx="70" ry="13" fill="none" stroke="#E4A58F" stroke-width="4"/></svg>',
+ yoga:'<svg viewBox="0 0 200 50"><path d="M14 8h172l10 34H4z" fill="#A9D8C2" stroke="'+RO+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M40 8l-8 34M100 8v34M160 8l8 34" stroke="#86C3A7" stroke-width="3"/></svg>',
+ poster:'<svg viewBox="0 0 80 100"><rect x="6" y="6" width="68" height="88" rx="6" fill="#FFF4D2" stroke="'+RO+'" stroke-width="2.4"/><path d="M40 22l5 10 11 1-8 7 3 11-11-6-11 6 3-11-8-7 11-1z" fill="#F5C443"/><text x="40" y="70" text-anchor="middle" font-size="10" font-family="Mitr,sans-serif" fill="'+RO+'">ไม่ต้องเร็ว</text><text x="40" y="84" text-anchor="middle" font-size="10" font-family="Mitr,sans-serif" fill="'+RO+'">แค่ไม่หยุด</text></svg>',
+ rack:'<svg viewBox="0 0 100 70"><path d="M8 26h84M8 56h84" stroke="#8A6B4E" stroke-width="5" stroke-linecap="round"/>'+[18,50,82].map((x,i)=>'<g transform="translate('+x+' '+(i%2?50:20)+')"><rect x="-10" y="-2" width="20" height="4" fill="#5A6470"/><rect x="-14" y="-6" width="6" height="12" rx="2" fill="'+['#E0663F','#4FC2D8','#8E7CC3'][i]+'"/><rect x="8" y="-6" width="6" height="12" rx="2" fill="'+['#E0663F','#4FC2D8','#8E7CC3'][i]+'"/></g>').join('')+'</svg>',
+ ball:'<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="16" fill="#F5C443" stroke="'+RO+'" stroke-width="2.4"/><path d="M5 16q15 8 30 0M8 28q12-6 24 0" stroke="#E0663F" stroke-width="3" fill="none"/></svg>',
+ bottle:'<svg viewBox="0 0 30 60"><rect x="10" y="2" width="10" height="8" rx="2" fill="#2D7A52"/><rect x="5" y="10" width="20" height="46" rx="7" fill="#BFE3F2" stroke="'+RO+'" stroke-width="2.4"/><path d="M5 30h20" stroke="#7CC4E8" stroke-width="3"/></svg>'};
+const roomArt=id=>imgSrc('room_'+id)?`<img src="${imgSrc('room_'+id)}" alt="">`:ROOM_SVG[id];
+/* the room scene behind the pet; level 15 turns the walls into the pet's own gym */
+function roomHTML(petBtn,lv){
+  const R=S.pet.room||{}, gym=lv>=15, bg=imgSrc(gym?'room_gym':'room_bg');
+  const it=sp=>{const id=R[sp], x=id&&ROOM.find(r=>r.id===id); if(!x) return '';
+    return x.play?`<button class="ri ${sp}" data-act="roomPlay" data-id="${id}" aria-label="เล่นกับ${x.name}">${roomArt(id)}</button>`:`<span class="ri ${sp}" aria-hidden="true">${roomArt(id)}</span>`};
+  return `<div class="room ${gym?'gym':''}">${bg?`<img class="roombg" src="${bg}" alt="">`:`<span class="win" aria-hidden="true"></span>${gym?'<span class="gymsign" aria-hidden="true">GYM</span>':''}`}
+   ${it('wall')}${it('mat')}${it('fl')}${it('fr')}<div class="roompet">${petBtn}</div>${it('toy')}</div>`;
+}
 const itemName=it=>it.slot==='skin'?'สี'+skinsOf(petKind())[it.id].name:it.name;
 const SHOP=[{id:'bow',slot:'head',name:'โบว์ชมพู',price:20},{id:'flower',slot:'head',name:'ดอกไม้ทัดหู',price:30},{id:'cap',slot:'head',name:'หมวกแก๊ป',price:40},
  {id:'beanie',slot:'head',name:'หมวกไหมพรม',price:55},{id:'glasses',slot:'face',name:'แว่นกันแดด',price:70},{id:'gray',slot:'skin',name:'สีเทาหมอก',price:90},
@@ -241,7 +272,7 @@ const kcalFor=d=>S.profile.kcal+woBonus(d);
 const DEF_GOALS={steps:8000,sleep:7,wpw:3,waistGoal:0,accent:'leaf'};
 function blankState(profile,pet){
   return {v:3,onboarded:true,obSeen:true,example:false,profile,days:{},weights:[],waist:[],custom:[],favs:['f30','f29','f1'],lifts:{},
-    pet:{name:'ข้าวปั้น',kind:'cat',bonus:0,spent:0,owned:['orange'],equip:{head:null,face:null,skin:'orange'},...pet},program:{done:0},lastBackup:null,adaptSeen:null};
+    pet:{name:'ข้าวปั้น',kind:'cat',bonus:0,spent:0,owned:['orange'],room:{},roomOwned:[],equip:{head:null,face:null,skin:'orange'},...pet},program:{done:0},lastBackup:null,adaptSeen:null};
 }
 function seed(){
   const prof={sex:'f',age:28,height:160,weight:62.3,goal:55,activity:1.2,goalType:'lose',...DEF_GOALS};
@@ -271,7 +302,7 @@ function migrate(o){
   if(!GOALS[o.profile.goalType]) o.profile.goalType=goalOf(o.profile);
   o.profile.activity=nearAct(o.profile.activity||1.2);   /* old lists counted workouts here; kcal target is kept as saved */
   o.favs=o.favs||['f30','f29','f1']; o.lifts=o.lifts||{}; o.waist=o.waist||[]; o.custom=o.custom||[];
-  o.pet={kind:'cat',bonus:0,spent:0,owned:['orange'],...o.pet}; o.pet.equip={head:null,face:null,skin:'orange',...(o.pet.equip||{})};
+  o.pet={kind:'cat',bonus:0,spent:0,owned:['orange'],room:{},roomOwned:[],...o.pet}; o.pet.equip={head:null,face:null,skin:'orange',...(o.pet.equip||{})};
   if(o.onboarded===undefined){o.onboarded=true;o.obSeen=true}
   Object.values(o.days).forEach(d=>{d.steps=d.steps||0;d.sleep=d.sleep||0;d.workouts=d.workouts||[];d.foods.forEach(f=>f.tags=f.tags||[])});
   return o;
@@ -689,18 +720,26 @@ function vBody(){
   <section class="card flat"><h3>เริ่มใหม่</h3><p class="small muted">${S.example?'ตอนนี้ยังเป็นข้อมูลตัวอย่าง ตั้งค่าของตัวเองแล้วเริ่มใช้จริงได้เลย':'ล้างประวัติทั้งหมดแล้วตั้งค่าใหม่ ควรสำรองข้อมูลก่อน'}</p>
    <button class="btn ghost small" data-act="${S.example?'onboard':'reset'}">${S.example?'เริ่มตั้งค่าของฉัน':'ล้างประวัติทั้งหมด'}</button></section>`;
 }
+let SHOPTAB='wear';
+function roomShop(){
+  const R=S.pet.room, own=S.pet.roomOwned;
+  return `<p class="small muted">วางได้ตำแหน่งละ 1 ชิ้น ของที่มีป้าย ▶ แตะในห้องแล้วน้องจะเล่นด้วย</p><div class="shop">${ROOM.map(x=>{const has=own.includes(x.id), on=R[x.spot]===x.id;
+   return `<div class="item roomitem ${on?'eq':''}"><span class="rprev">${roomArt(x.id)}</span><b>${x.play?'▶ ':''}${x.name}</b><span class="small muted">${SPOTS[x.spot]}</span>
+    ${has?`<button class="btn small ${on?'ghost':''}" data-act="roomPlace" data-id="${x.id}">${on?'เก็บออก':'วางในห้อง'}</button>`:`<button class="btn small ${coins()<x.price?'ghost':''}" data-act="roomBuy" data-id="${x.id}">${IC.coin} ${x.price}</button>`}</div>`}).join('')}</div>`;
+}
 function vPet(){
   const xp=totalXP(), L=levelInfo(xp), [md,mtxt,anim]=mood(), parts=xpParts(dk()), eq=S.pet.equip;
   const ages=KINDS[petKind()].ages, stage=L.lv>=10?ages[2]:L.lv>=5?ages[1]:ages[0];
   return `<header class="top"><div><div class="eyebrow">${stage} · เลเวล ${L.lv}</div><h1>${esc(S.pet.name)}</h1></div><div class="btns"><button class="chip" data-act="kindSheet">เปลี่ยนชนิด</button><button class="chip" data-act="rename">เปลี่ยนชื่อ</button></div></header>
-  <section class="card"><div class="petstage"><button class="petbtn ${anim}" data-act="petTap" aria-label="คุยกับน้อง${petWord()}">${petSVG({lv:L.lv,md})}</button><div class="bubble" id="bubble">${mtxt}</div></div>
+  <section class="card"><div class="petstage">${roomHTML(`<button class="petbtn ${anim}" data-act="petTap" aria-label="คุยกับน้อง${petWord()}">${petSVG({lv:L.lv,md})}</button>`,L.lv)}<div class="bubble" id="bubble">${mtxt}</div></div>
    <div class="row-between small"><span>EXP</span><span class="num muted">${L.cur}/${L.need} สู่เลเวล ${L.lv+1}</span></div><div class="xpbar"><i style="width:${L.cur/L.need*100}%"></i></div>
    <div class="row-between"><span class="chip num">${IC.flame} ${streak()} วันติด</span><span class="chip num">${IC.coin} ${fmt(coins())} เหรียญ</span></div></section>
   <section class="card"><div class="row-between"><h2>ร้านของน้อง</h2><span class="small muted">1 เหรียญ ทุก 10 EXP</span></div>
-   <div class="shop">${SHOP.map(it=>{const own=S.pet.owned.includes(it.id), on=it.slot==='skin'?eq.skin===it.id:eq[it.slot]===it.id;
+   <div class="seg-ctl" role="group" aria-label="หมวดร้าน"><button type="button" class="${SHOPTAB==='wear'?'on':''}" data-act="shopTab" data-v="wear">ชุดแต่งตัว</button><button type="button" class="${SHOPTAB==='room'?'on':''}" data-act="shopTab" data-v="room">ของในห้อง</button></div>
+   ${SHOPTAB==='room'?roomShop():`   <div class="shop">${SHOP.map(it=>{const own=S.pet.owned.includes(it.id), on=it.slot==='skin'?eq.skin===it.id:eq[it.slot]===it.id;
     const preview={...eq,[it.slot]:it.id};
     return `<div class="item ${on?'eq':''}">${petSVG({lv:L.lv,md:'happy',eq:preview})}<b>${itemName(it)}</b>
-     ${own?`<button class="btn small ${on?'ghost':''}" data-act="equip" data-id="${it.id}">${on?'ถอดออก':'ใส่เลย'}</button>`:`<button class="btn small ${coins()<it.price?'ghost':''}" data-act="buy" data-id="${it.id}">${IC.coin} ${it.price}</button>`}</div>`}).join('')}</div></section>
+     ${own?`<button class="btn small ${on?'ghost':''}" data-act="equip" data-id="${it.id}">${on?'ถอดออก':'ใส่เลย'}</button>`:`<button class="btn small ${coins()<it.price?'ghost':''}" data-act="buy" data-id="${it.id}">${IC.coin} ${it.price}</button>`}</div>`}).join('')}</div>`}</section>
   <section class="card"><h2>สมุดแสตมป์</h2><div class="stamps">${BADGES.map(b=>{const got=b[4]();return `<div class="stamp ${got?'got':''}"><span class="s">${IC[b[3]]||IC.star}</span><b>${b[1]}</b><span>${b[2]}</span></div>`}).join('')}</div></section>
   <section class="card"><h2>วันนี้ได้ EXP จาก</h2>${parts.map(p=>`<div class="xprow ${p[2]?'':'no'}"><span>${p[2]?'✓':'○'} ${p[0]}</span><span class="num">+${p[1]}</span></div>`).join('')}
    <p class="small muted">น้องได้ EXP เมื่อกินพอดีกับเป้า ไม่ใช่ยิ่งกินน้อยยิ่งดี กินน้อยเกินไปจะไม่ได้แต้มแคล</p></section>
@@ -1257,6 +1296,15 @@ document.addEventListener('click',e=>{
      b.classList.remove('jump');void b.offsetWidth;b.classList.add('jump');const r=b.getBoundingClientRect();heart(r.left+r.width/2,r.top+r.height*.3);setTimeout(()=>heart(r.left+r.width/2+16,r.top+r.height*.3),140);
      const L=petLines(), bub=document.getElementById('bubble'); if(bub&&L.length){petTap.i=((petTap.i||0)+1)%L.length;bub.textContent=L[petTap.i]}
      break;}
+   case 'shopTab': SHOPTAB=b.dataset.v; render(); break;
+   case 'roomBuy':{const x=ROOM.find(r=>r.id===b.dataset.id);
+     if(coins()<x.price){toast(`ยังขาดอีก ${x.price-coins()} เหรียญ ทำภารกิจเพิ่มนะ`);break}
+     act(()=>{S.pet.spent+=x.price;S.pet.roomOwned.push(x.id);S.pet.room[x.spot]=x.id},`ได้${x.name}แล้ว วางในห้องให้เลย`);burst(...lastXY,24);break}
+   case 'roomPlace':{const x=ROOM.find(r=>r.id===b.dataset.id);
+     act(()=>{const R=S.pet.room;R[x.spot]=R[x.spot]===x.id?null:x.id},'จัดห้องแล้ว');break}
+   case 'roomPlay':{const x=ROOM.find(r=>r.id===b.dataset.id), pb=document.querySelector('.room .petbtn'), bub=document.getElementById('bubble');
+     if(pb){pb.classList.remove('jump',...Object.keys(PLAY_LINES).map(k=>'p-'+k));void pb.offsetWidth;pb.classList.add('p-'+x.play);clearTimeout(pb.t);pb.t=setTimeout(()=>pb.classList.remove('p-'+x.play),2400)}
+     if(bub)bub.textContent=PLAY_LINES[x.play]; break}
    case 'buy':{const it=SHOP.find(x=>x.id===b.dataset.id);
      if(coins()<it.price){toast(`ยังขาดอีก ${it.price-coins()} เหรียญ ทำภารกิจเพิ่มนะ`);break}
      act(()=>{S.pet.spent+=it.price;S.pet.owned.push(it.id);if(it.slot==='skin')S.pet.equip.skin=it.id;else S.pet.equip[it.slot]=it.id},`ได้${itemName(it)}แล้ว`);burst(...lastXY,24);break}

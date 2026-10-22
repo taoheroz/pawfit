@@ -414,3 +414,32 @@ body:has(.ob:not([hidden])) .toast{z-index:80}
 .goalc.on{box-shadow:0 0 0 2.5px var(--leaf),var(--sh-1)}
 .goalc:active{transform:scale(.97)}
 .ring .lab.wb{color:var(--leaf);font-weight:600;font-size:11px}
+/* pet room: warm illustration colours mixed toward the page background so it sits well in light and dark */
+.petstage .room{position:relative;width:100%;height:250px;border-radius:18px;overflow:hidden;background:linear-gradient(color-mix(in srgb,#F3E4CF 72%,var(--bg)) 0 62%,color-mix(in srgb,#D9B98F 70%,var(--bg)) 62%)}
+.room.gym{background:linear-gradient(color-mix(in srgb,#CFE3EA 72%,var(--bg)) 0 62%,color-mix(in srgb,#9AA7B0 70%,var(--bg)) 62%)}
+.room .roombg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.room .win{position:absolute;top:10%;right:9%;width:22%;height:30%;border-radius:10px;background:linear-gradient(#BFE3F2,#E8F6FB);box-shadow:inset 0 0 0 4px #FFF8EE,0 0 0 2px #7A5238}
+.room .win::after{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;background:#FFF8EE}
+.room .gymsign{position:absolute;top:10%;left:50%;transform:translateX(-50%);padding:4px 10px;border-radius:8px;background:#2E3440;color:#F5C443;font:600 14px var(--f-display);letter-spacing:2px}
+.room .ri{position:absolute;display:block;padding:0;background:none;border:0}
+.room .ri svg,.room .ri img{width:100%;height:auto;display:block}
+.room button.ri{cursor:pointer;transition:transform .15s}
+.room button.ri:active{transform:scale(.94)}
+.room .ri.wall{top:8%;left:7%;width:24%}
+.room .ri.mat{bottom:3%;left:18%;width:64%}
+.room .ri.fl{bottom:9%;left:3%;width:20%}
+.room .ri.fr{bottom:8%;right:3%;width:27%}
+.room .ri.toy{bottom:6%;left:24%;width:9%}
+.room .roompet{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);width:150px}
+.room .roompet .cat{width:150px}
+.item .rprev{display:grid;place-items:center;width:90px;height:80px}
+.item .rprev svg,.item .rprev img{max-width:100%;max-height:100%}
+/* pet plays with room items */
+.petbtn.p-run .cat .bob{animation:runbob .32s ease-in-out infinite}
+.petbtn.p-punch .cat .bob{animation:punch .4s ease-in-out infinite}
+.petbtn.p-stretch .cat .bob{animation:stretchy 2.4s ease-in-out}
+.petbtn.p-nap .cat .bob{animation:bob 5.5s ease-in-out infinite;filter:saturate(.8)}
+.petbtn.p-ball .cat .bob,.petbtn.p-drink .cat .bob{animation:hop .6s cubic-bezier(.3,1.4,.5,1) 3}
+@keyframes runbob{0%,100%{transform:translate(-3px,0)}50%{transform:translate(3px,-6px)}}
+@keyframes punch{0%,100%{transform:translateX(0) rotate(0)}40%{transform:translateX(-6px) rotate(-4deg)}}
+@media (prefers-reduced-motion:reduce){.petbtn[class*=" p-"] .cat .bob{animation:none}}
