@@ -186,11 +186,27 @@ function sessionInfo(n){
   const min=type==='C'?Math.round(cardioSegs(week).reduce((a,b)=>a+b.s,0)/60):(week===1?25:35);
   return {n,i,week,type,title,min,round:Math.floor(n/TOTAL_SESS)+1};
 }
-const UNLOCKS=[[3,'ผ้าพันคอแดง'],[5,'ร่างแมววัยรุ่น + ที่คาดผมนักกีฬา'],[8,'ดัมเบลจิ๋วคู่ใจ'],[10,'ร่างแมวโตเต็มวัย'],[15,'ห้องยิมส่วนตัวของน้องแมว']];
-const SKINS={orange:{name:'ส้มลายเสือ',b:'#F2A65A',bl:'#FCE3C4',st:'#D9823A',ear:'#F7B6A3',eye:'#3A2A20',tail:'#E8964A',wh:'#C9874F'},
+/* pet kinds: the same 4 skin ids (orange/gray/cream/black) exist for every kind, so shop purchases carry over when switching */
+const KINDS={cat:{w:'แมว',label:'แมว',ages:['ลูกแมว','แมววัยรุ่น','แมวโตเต็มวัย']},
+ shiba:{w:'หมา',label:'หมาชิบะ',ages:['ลูกหมา','หมาวัยรุ่น','หมาโตเต็มวัย']},
+ rabbit:{w:'กระต่าย',label:'กระต่าย',ages:['ลูกกระต่าย','กระต่ายวัยรุ่น','กระต่ายโตเต็มวัย']}};
+const petKind=()=>KINDS[S.pet.kind]?S.pet.kind:'cat';
+const petWord=()=>KINDS[petKind()].w;
+const UNLOCKS=()=>{const a=KINDS[petKind()].ages;return [[3,'ผ้าพันคอแดง'],[5,`ร่าง${a[1]} + ที่คาดผมนักกีฬา`],[8,'ดัมเบลจิ๋วคู่ใจ'],[10,`ร่าง${a[2]}`],[15,`ห้องยิมส่วนตัวของน้อง${petWord()}`]]};
+const SKINS={cat:{orange:{name:'ส้มลายเสือ',b:'#F2A65A',bl:'#FCE3C4',st:'#D9823A',ear:'#F7B6A3',eye:'#3A2A20',tail:'#E8964A',wh:'#C9874F'},
  gray:{name:'เทาหมอก',b:'#A5ADB6',bl:'#E6E9EC',st:'#78828C',ear:'#F2B8C0',eye:'#2A2F35',tail:'#8D96A0',wh:'#6E7882'},
  cream:{name:'ครีมนมสด',b:'#F1E2CC',bl:'#FFF7EC',st:'#D6BE9C',ear:'#F5B9B0',eye:'#3A2A20',tail:'#E3CFB2',wh:'#C2A882'},
- black:{name:'ดำนิล',b:'#3B3B43',bl:'#55555F',st:'#2A2A30',ear:'#E39AA6',eye:'#F4D35E',tail:'#2F2F36',wh:'#8A8A95'}};
+ black:{name:'ดำนิล',b:'#3B3B43',bl:'#55555F',st:'#2A2A30',ear:'#E39AA6',eye:'#F4D35E',tail:'#2F2F36',wh:'#8A8A95'}},
+ shiba:{orange:{name:'ส้มชิบะ',b:'#E39A52',bl:'#FFF4E4',st:'#C97C38',ear:'#F2B79A',eye:'#3A2A20',tail:'#D98B45',wh:'#3A2A20'},
+ gray:{name:'งาดำ',b:'#8C7A6B',bl:'#F6EEE4',st:'#5E5048',ear:'#E9B3A2',eye:'#2A2320',tail:'#6F6056',wh:'#2A2320'},
+ cream:{name:'ครีม',b:'#EED8B6',bl:'#FFFAF2',st:'#D4B88E',ear:'#F2BCA8',eye:'#3A2A20',tail:'#E2C69E',wh:'#3A2A20'},
+ black:{name:'ดำแทน',b:'#34323A',bl:'#F3E6D2',st:'#C98A4B',ear:'#D9A08C',eye:'#2A1E18',tail:'#2B2930',wh:'#1E1C22'}},
+ rabbit:{orange:{name:'น้ำตาลคาราเมล',b:'#D2A07A',bl:'#F8E8D8',st:'#B88460',ear:'#F4B8B4',eye:'#3A2A20',tail:'#FFF6EE',wh:'#A47A5C'},
+ gray:{name:'เทาหมอก',b:'#B4BAC2',bl:'#ECEEF1',st:'#8D949D',ear:'#F2B8C0',eye:'#2A2F35',tail:'#F4F5F7',wh:'#7E858E'},
+ cream:{name:'ขาวครีม',b:'#F7EFE3',bl:'#FFFDF8',st:'#E2D4BF',ear:'#F6BDB8',eye:'#3A2A20',tail:'#FFFFFF',wh:'#C9B89F'},
+ black:{name:'ดำนิล',b:'#3B3B43',bl:'#55555F',st:'#2A2A30',ear:'#E39AA6',eye:'#F4D35E',tail:'#EDEDF0',wh:'#8A8A95'}}};
+const skinsOf=k=>SKINS[k]||SKINS.cat;
+const itemName=it=>it.slot==='skin'?'สี'+skinsOf(petKind())[it.id].name:it.name;
 const SHOP=[{id:'bow',slot:'head',name:'โบว์ชมพู',price:20},{id:'flower',slot:'head',name:'ดอกไม้ทัดหู',price:30},{id:'cap',slot:'head',name:'หมวกแก๊ป',price:40},
  {id:'beanie',slot:'head',name:'หมวกไหมพรม',price:55},{id:'glasses',slot:'face',name:'แว่นกันแดด',price:70},{id:'gray',slot:'skin',name:'สีเทาหมอก',price:90},
  {id:'cream',slot:'skin',name:'สีครีมนมสด',price:90},{id:'headphones',slot:'head',name:'หูฟังสายฟิต',price:110},{id:'black',slot:'skin',name:'สีดำนิล',price:130},{id:'crown',slot:'head',name:'มงกุฎแชมป์',price:220}];
@@ -212,7 +228,7 @@ function calcTargets(p){
 const DEF_GOALS={steps:8000,sleep:7,wpw:3,waistGoal:0,accent:'leaf'};
 function blankState(profile,pet){
   return {v:3,onboarded:true,obSeen:true,example:false,profile,days:{},weights:[],waist:[],custom:[],favs:['f30','f29','f1'],lifts:{},
-    pet:{name:'ข้าวปั้น',bonus:0,spent:0,owned:['orange'],equip:{head:null,face:null,skin:'orange'},...pet},program:{done:0},lastBackup:null,adaptSeen:null};
+    pet:{name:'ข้าวปั้น',kind:'cat',bonus:0,spent:0,owned:['orange'],equip:{head:null,face:null,skin:'orange'},...pet},program:{done:0},lastBackup:null,adaptSeen:null};
 }
 function seed(){
   const prof={sex:'f',age:28,height:160,weight:62.3,goal:55,activity:1.375,...DEF_GOALS};
@@ -240,7 +256,7 @@ function migrate(o){
   if(o.example&&o.v!==3) return null;   /* older sample data: reseed with the newer sample */
   o.v=3; o.profile={...DEF_GOALS,...o.profile};
   o.favs=o.favs||['f30','f29','f1']; o.lifts=o.lifts||{}; o.waist=o.waist||[]; o.custom=o.custom||[];
-  o.pet={bonus:0,spent:0,owned:['orange'],...o.pet}; o.pet.equip={head:null,face:null,skin:'orange',...(o.pet.equip||{})};
+  o.pet={kind:'cat',bonus:0,spent:0,owned:['orange'],...o.pet}; o.pet.equip={head:null,face:null,skin:'orange',...(o.pet.equip||{})};
   if(o.onboarded===undefined){o.onboarded=true;o.obSeen=true}
   Object.values(o.days).forEach(d=>{d.steps=d.steps||0;d.sleep=d.sleep||0;d.workouts=d.workouts||[];d.foods.forEach(f=>f.tags=f.tags||[])});
   return o;
@@ -365,8 +381,8 @@ function adaptive(){
 const adaptPending=()=>{const a=adaptive();return a.ready&&Math.abs(a.diff)>=80&&!(S.adaptSeen&&S.adaptSeen>ago(7))?a:null};
 
 /* ================= cat ================= */
-function catSVG(o={}){
-  const lv=o.lv??levelOf(totalXP()), md=o.md??'happy', eq=o.eq||S.pet.equip, K=SKINS[eq.skin]||SKINS.orange;
+function petSVG(o={}){
+  const kind=KINDS[o.kind]?o.kind:petKind(), lv=o.lv??levelOf(totalXP()), md=o.md??'happy', eq=o.eq||S.pet.equip, SK=skinsOf(kind), K=SK[eq.skin]||SK.orange;
   const s=lv>=10?1:lv>=5?.9:.8;
   const eyes=md==='happy'
     ?`<path d="M76 80q8-9 16 0M108 80q8-9 16 0" stroke="${K.eye}" stroke-width="4" fill="none" stroke-linecap="round"/>`
@@ -388,21 +404,40 @@ function catSVG(o={}){
   const face=eq.face==='glasses'?'<g><rect x="69" y="71" width="27" height="17" rx="8" fill="#22242A"/><rect x="104" y="71" width="27" height="17" rx="8" fill="#22242A"/><rect x="95" y="76" width="10" height="3" fill="#22242A"/><path d="M74 75h8" stroke="#fff" stroke-width="2" opacity=".5" stroke-linecap="round"/></g>':'';
   const db=lv>=8?'<g transform="translate(150 150)"><rect x="-2" y="6" width="34" height="5" rx="2" fill="#6B7570"/><rect x="-8" y="0" width="8" height="17" rx="2" fill="#3C4642"/><rect x="30" y="0" width="8" height="17" rx="2" fill="#3C4642"/></g>':'';
   const zz=md==='sleep'?'<g fill="var(--muted)" font-family="Mitr,sans-serif" font-weight="600"><text class="zz" x="148" y="40" font-size="16">z</text><text class="zz" x="160" y="26" font-size="12" style="animation-delay:.9s">z</text></g>':'';
-  return `<svg class="cat" viewBox="0 0 200 180" role="img" aria-label="น้องแมว ${esc(S.pet.name)}">
+  const mouthC=eq.skin==='black'&&kind!=='shiba'?'#C9C9D2':'#3A2A20';
+  /* per-kind parts; the head circle (cx100 cy80 r46) is shared so hats, glasses and headphones fit every kind */
+  const P=kind==='shiba'?{
+    tail:`<path class="tail" d="M146 142q32 2 32-22q0-17-15-15q-13 2-9 15" stroke="${K.tail}" stroke-width="13" fill="none" stroke-linecap="round"/>`,
+    ears:`<path d="M58 64q-4-36 8-44q16 8 28 26z" fill="${K.b}"/><path d="M142 64q4-36-8-44q-16 8-28 26z" fill="${K.b}"/><path d="M66 52q-1-20 4-27q9 5 15 16z" fill="${K.ear}"/><path d="M134 52q1-20-4-27q-9 5-15 16z" fill="${K.ear}"/>`,
+    marks:`<path d="M58 90q4 32 42 36q38-4 42-36q-14-7-26 0q-7 5-16 5t-16-5q-12-7-26 0z" fill="${K.bl}"/><ellipse cx="83" cy="64" rx="5.5" ry="3.5" fill="${K.bl}"/><ellipse cx="117" cy="64" rx="5.5" ry="3.5" fill="${K.bl}"/>`,
+    nose:`<ellipse cx="100" cy="92" rx="6.5" ry="4.5" fill="#2A2320"/><path d="M100 96v3M91 100q4.5 5 9 0q4.5 5 9 0" stroke="${mouthC}" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    wh:''}
+   :kind==='rabbit'?{
+    tail:`<circle class="tail" cx="152" cy="150" r="14" fill="${K.tail}"/>`,
+    ears:`<ellipse cx="80" cy="28" rx="12" ry="28" fill="${K.b}" transform="rotate(-8 80 50)"/><ellipse cx="80" cy="30" rx="6" ry="20" fill="${K.ear}" transform="rotate(-8 80 50)"/>`+
+     (lv>=5?`<ellipse cx="120" cy="28" rx="12" ry="28" fill="${K.b}" transform="rotate(102 120 48)"/><ellipse cx="120" cy="30" rx="6" ry="20" fill="${K.ear}" transform="rotate(102 120 48)"/>`
+           :`<ellipse cx="120" cy="28" rx="12" ry="28" fill="${K.b}" transform="rotate(8 120 50)"/><ellipse cx="120" cy="30" rx="6" ry="20" fill="${K.ear}" transform="rotate(8 120 50)"/>`),
+    marks:'',
+    nose:`<path d="M96 89l4 4 4-4z" fill="#E58C9A"/><path d="M91 98q4.5 5 9 0q4.5 5 9 0" stroke="${mouthC}" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M96 101h8v5.5q-4 1.5-8 0z" fill="#fff" stroke="${mouthC}" stroke-width="1.4"/><path d="M100 101v6" stroke="${mouthC}" stroke-width="1.2"/>`,
+    wh:`<path d="M60 92l-12-2M60 98l-11 3M140 92l12-2M140 98l11 3" stroke="${K.wh}" stroke-width="2" stroke-linecap="round"/>`}
+   :{
+    tail:`<path class="tail" d="M148 146q40-6 34-52" stroke="${K.tail}" stroke-width="13" fill="none" stroke-linecap="round"/>`,
+    ears:`<path d="M60 58l4-38 30 22z" fill="${K.b}"/><path d="M140 58l-4-38-30 22z" fill="${K.b}"/><path d="M66 50l3-20 15 12z" fill="${K.ear}"/><path d="M134 50l-3-20-15 12z" fill="${K.ear}"/>`,
+    marks:`<path d="M90 38q10 7 20 0M84 46q16 9 32 0" stroke="${K.st}" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+    nose:`<path d="M95 90l5 5 5-5z" fill="#DE7777"/><path d="M91 99q4.5 5 9 0q4.5 5 9 0" stroke="${mouthC}" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+    wh:`<path d="M58 90l-18-3M58 97l-17 4M142 90l18-3M142 97l17 4" stroke="${K.wh}" stroke-width="2" stroke-linecap="round"/>`};
+  return `<svg class="cat ${kind}" viewBox="0 0 200 180" role="img" aria-label="น้อง${KINDS[kind].w} ${esc(S.pet.name)}">
   <g transform="translate(100 172) scale(${s}) translate(-100 -172)"><g class="bob">
-  <path class="tail" d="M148 146q40-6 34-52" stroke="${K.tail}" stroke-width="13" fill="none" stroke-linecap="round"/>
+  ${P.tail}
   <ellipse cx="100" cy="134" rx="54" ry="38" fill="${K.b}"/>
   <ellipse cx="100" cy="144" rx="31" ry="23" fill="${K.bl}"/>
   <ellipse cx="78" cy="168" rx="15" ry="8" fill="${K.b}"/><ellipse cx="122" cy="168" rx="15" ry="8" fill="${K.b}"/>
   ${scarf}
-  <path d="M60 58l4-38 30 22z" fill="${K.b}"/><path d="M140 58l-4-38-30 22z" fill="${K.b}"/>
-  <path d="M66 50l3-20 15 12z" fill="${K.ear}"/><path d="M134 50l-3-20-15 12z" fill="${K.ear}"/>
+  ${P.ears}
   <circle cx="100" cy="80" r="46" fill="${K.b}"/>
-  <path d="M90 38q10 7 20 0M84 46q16 9 32 0" stroke="${K.st}" stroke-width="4" fill="none" stroke-linecap="round"/>
+  ${P.marks}
   ${head}${eyes}${face}${blush}
-  <path d="M95 90l5 5 5-5z" fill="#DE7777"/>
-  <path d="M91 99q4.5 5 9 0q4.5 5 9 0" stroke="${eq.skin==='black'?'#C9C9D2':'#3A2A20'}" stroke-width="3" fill="none" stroke-linecap="round"/>
-  <path d="M58 90l-18-3M58 97l-17 4M142 90l18-3M142 97l17 4" stroke="${K.wh}" stroke-width="2" stroke-linecap="round"/>
+  ${P.nose}${P.wh}
   </g>${db}</g>${zz}</svg>`;
 }
 const bossSVG='<svg viewBox="0 0 64 64" aria-hidden="true"><ellipse cx="32" cy="40" rx="24" ry="18" fill="#8E7CC3"/><ellipse cx="32" cy="44" rx="15" ry="10" fill="#B9ACE0"/><path d="M14 30q-4-14 6-16M50 30q4-14-6-16" stroke="#8E7CC3" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M22 36h8M34 36h8" stroke="#2A2340" stroke-width="3" stroke-linecap="round"/><path d="M28 46q4 2 8 0" stroke="#2A2340" stroke-width="2.5" fill="none" stroke-linecap="round"/><text x="46" y="20" font-size="10" font-weight="700" fill="#8E7CC3">z</text><text x="52" y="12" font-size="8" font-weight="700" fill="#8E7CC3">z</text></svg>';
@@ -437,7 +472,7 @@ const IC={
  heart:sv('<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.5A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/>',18),
  share:sv('<path d="M12 3v12M8 7l4-4 4 4M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>',18),
  spark:sv('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',20)};
-const TABS=[['today','วันนี้'],['food','อาหาร'],['train','ออกกำลัง'],['body','ร่างกาย'],['pet','น้องแมว']];
+const TABS=()=>[['today','วันนี้'],['food','อาหาร'],['train','ออกกำลัง'],['body','ร่างกาย'],['pet','น้อง'+petWord()]];
 
 /* ================= advice ================= */
 function advice(){
@@ -463,8 +498,8 @@ function dateBar(){
 const pastBanner=()=>isToday()?'':`<div class="past"><span style="flex:1">กำลังแก้ไข <b>${thDate(CUR)}</b> เติมของที่ลืมได้เลย</span><button class="btn small" data-act="day" data-k="${dk()}">กลับวันนี้</button></div>`;
 function stageHTML(){
   const xp=totalXP(), L=levelInfo(xp), [md,txt,anim]=mood(), qd=qDoneOn(dk());
-  return `<section class="stage card" aria-label="น้องแมว">
-   <button class="petbtn ${anim}" data-act="petTap" aria-label="คุยกับน้องแมว">${catSVG({lv:L.lv,md})}</button>
+  return `<section class="stage card" aria-label="น้อง${petWord()}">
+   <button class="petbtn ${anim}" data-act="petTap" aria-label="คุยกับน้อง${petWord()}">${petSVG({lv:L.lv,md})}</button>
    <div class="stage-meta"><div class="bubble" id="bubble">${txt}</div>
     <div class="badges"><span class="mini">${esc(S.pet.name)} · Lv ${L.lv}</span><span class="mini num">${IC.flame} ${streak()} วัน</span><span class="mini num">${IC.coin} ${fmt(coins())}</span><span class="mini num ${qd===3?'qchip':''}">ภารกิจ ${qd}/3</span></div></div>
    <div class="lvbar" aria-label="EXP ${L.cur} จาก ${L.need}"><i style="width:${L.cur/L.need*100}%"></i></div></section>`;
@@ -639,20 +674,20 @@ function vBody(){
 }
 function vPet(){
   const xp=totalXP(), L=levelInfo(xp), [md,mtxt,anim]=mood(), parts=xpParts(dk()), eq=S.pet.equip;
-  const stage=L.lv>=10?'แมวโตเต็มวัย':L.lv>=5?'แมววัยรุ่น':'ลูกแมว';
-  return `<header class="top"><div><div class="eyebrow">${stage} · เลเวล ${L.lv}</div><h1>${esc(S.pet.name)}</h1></div><button class="chip" data-act="rename">เปลี่ยนชื่อ</button></header>
-  <section class="card"><div class="petstage"><button class="petbtn ${anim}" data-act="petTap" aria-label="คุยกับน้องแมว">${catSVG({lv:L.lv,md})}</button><div class="bubble" id="bubble">${mtxt}</div></div>
+  const ages=KINDS[petKind()].ages, stage=L.lv>=10?ages[2]:L.lv>=5?ages[1]:ages[0];
+  return `<header class="top"><div><div class="eyebrow">${stage} · เลเวล ${L.lv}</div><h1>${esc(S.pet.name)}</h1></div><div class="btns"><button class="chip" data-act="kindSheet">เปลี่ยนชนิด</button><button class="chip" data-act="rename">เปลี่ยนชื่อ</button></div></header>
+  <section class="card"><div class="petstage"><button class="petbtn ${anim}" data-act="petTap" aria-label="คุยกับน้อง${petWord()}">${petSVG({lv:L.lv,md})}</button><div class="bubble" id="bubble">${mtxt}</div></div>
    <div class="row-between small"><span>EXP</span><span class="num muted">${L.cur}/${L.need} สู่เลเวล ${L.lv+1}</span></div><div class="xpbar"><i style="width:${L.cur/L.need*100}%"></i></div>
    <div class="row-between"><span class="chip num">${IC.flame} ${streak()} วันติด</span><span class="chip num">${IC.coin} ${fmt(coins())} เหรียญ</span></div></section>
   <section class="card"><div class="row-between"><h2>ร้านของน้อง</h2><span class="small muted">1 เหรียญ ทุก 10 EXP</span></div>
    <div class="shop">${SHOP.map(it=>{const own=S.pet.owned.includes(it.id), on=it.slot==='skin'?eq.skin===it.id:eq[it.slot]===it.id;
     const preview={...eq,[it.slot]:it.id};
-    return `<div class="item ${on?'eq':''}">${catSVG({lv:L.lv,md:'happy',eq:preview})}<b>${it.name}</b>
+    return `<div class="item ${on?'eq':''}">${petSVG({lv:L.lv,md:'happy',eq:preview})}<b>${itemName(it)}</b>
      ${own?`<button class="btn small ${on?'ghost':''}" data-act="equip" data-id="${it.id}">${on?'ถอดออก':'ใส่เลย'}</button>`:`<button class="btn small ${coins()<it.price?'ghost':''}" data-act="buy" data-id="${it.id}">${IC.coin} ${it.price}</button>`}</div>`}).join('')}</div></section>
   <section class="card"><h2>สมุดแสตมป์</h2><div class="stamps">${BADGES.map(b=>{const got=b[4]();return `<div class="stamp ${got?'got':''}"><span class="s">${IC[b[3]]||IC.star}</span><b>${b[1]}</b><span>${b[2]}</span></div>`}).join('')}</div></section>
   <section class="card"><h2>วันนี้ได้ EXP จาก</h2>${parts.map(p=>`<div class="xprow ${p[2]?'':'no'}"><span>${p[2]?'✓':'○'} ${p[0]}</span><span class="num">+${p[1]}</span></div>`).join('')}
    <p class="small muted">น้องได้ EXP เมื่อกินพอดีกับเป้า ไม่ใช่ยิ่งกินน้อยยิ่งดี กินน้อยเกินไปจะไม่ได้แต้มแคล</p></section>
-  <section class="card"><h2>ปลดล็อกตามเลเวล</h2>${UNLOCKS.map(([l,n])=>`<div class="unlock ${L.lv>=l?'got':''}"><span class="lv num">Lv${l}</span><span>${n}</span></div>`).join('')}</section>
+  <section class="card"><h2>ปลดล็อกตามเลเวล</h2>${UNLOCKS().map(([l,n])=>`<div class="unlock ${L.lv>=l?'got':''}"><span class="lv num">Lv${l}</span><span>${n}</span></div>`).join('')}</section>
   <section class="card flat small muted">ถ้าหายไปหลายวัน น้องจะแค่เหงา ไม่ป่วย ไม่ลดเลเวล กลับมาเมื่อไหร่ก็ดีใจเสมอ</section>`;
 }
 function render(animate){
@@ -664,14 +699,14 @@ function render(animate){
   if(animate){app.classList.add('anim');clearTimeout(render.t);render.t=setTimeout(()=>app.classList.remove('anim'),1100)}
   const db=document.getElementById('datebar'); if(db){const on=db.querySelector('.on');if(on)db.scrollLeft=on.offsetLeft-db.clientWidth+on.offsetWidth+8}
   const mb=document.getElementById('moreBox'); if(mb)mb.addEventListener('toggle',()=>{MORE_OPEN=mb.open});
-  document.getElementById('nav').innerHTML=TABS.map(([k,l])=>`<button class="${k===TAB?'on':''}" data-tab="${k}" aria-current="${k===TAB?'page':'false'}">${IC[k]}<span>${l}</span></button>`).join('');
+  document.getElementById('nav').innerHTML=TABS().map(([k,l])=>`<button class="${k===TAB?'on':''}" data-tab="${k}" aria-current="${k===TAB?'page':'false'}">${IC[k]}<span>${l}</span></button>`).join('');
 }
 
 /* ================= onboarding ================= */
 let OB=null;
 function showOB(step){
   const P=S.profile;
-  OB=OB||{p:{sex:P.sex,age:P.age,height:P.height,weight:P.weight,goal:P.goal,activity:P.activity},skin:'orange',name:'ข้าวปั้น',t:null};
+  OB=OB||{p:{sex:P.sex,age:P.age,height:P.height,weight:P.weight,goal:P.goal,activity:P.activity},kind:'cat',skin:'orange',name:'ข้าวปั้น',t:null};
   OB.step=step; drawOB(); document.getElementById('ob').hidden=false; document.body.style.overflow='hidden';
 }
 function hideOB(){document.getElementById('ob').hidden=true;document.body.style.overflow='';}
@@ -680,7 +715,7 @@ function drawOB(){
   const dots=`<div class="obdots" aria-hidden="true">${[1,2,3].map(i=>`<i class="${s>=i?'on':''}"></i>`).join('')}</div>`;
   let body='';
   if(s===0) body=`<div style="text-align:center;display:flex;flex-direction:column;gap:10px;margin-top:auto">
-    <div class="hero-cat">${imgSrc('hero_welcome')?`<img src="${imgSrc('hero_welcome')}" alt="" style="width:100%">`:catSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}})}</div>
+    <div class="hero-cat">${imgSrc('hero_welcome')?`<img src="${imgSrc('hero_welcome')}" alt="" style="width:100%">`:petSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}})}</div>
     <h1>PawFit</h1><p class="muted">ดูแลสุขภาพทีละนิด พร้อมเพื่อนตัวน้อยที่โตไปกับเธอ<br>นับแคล โปรตีน ออกกำลังแบบไม่กดดัน</p></div>
    <div style="display:flex;flex-direction:column;gap:10px;margin-top:auto"><button class="btn block" data-act="ob" data-v="1">เริ่มตั้งค่าของฉัน</button><button class="btn ghost block" data-act="obSkip">ขอดูตัวอย่างก่อน</button></div>`;
   else if(s===1) body=`${dots}<div><div class="eyebrow">ขั้นที่ 1 จาก 3</div><h1>เล่าเรื่องร่างกายให้ฟังหน่อย</h1><p class="muted small">ใช้คำนวณเป้าที่พอดีกับเธอ ข้อมูลอยู่ในเครื่องนี้เท่านั้น</p></div>
@@ -712,8 +747,9 @@ function drawOB(){
      <div class="err" id="oErr"></div>
      <div class="obnav"><button class="btn ghost" data-act="ob" data-v="1">ย้อนกลับ</button><button class="btn" data-act="ob2">ถัดไป</button></div>`;
   }
-  else body=`${dots}<div><div class="eyebrow">ขั้นที่ 3 จาก 3</div><h1>เลือกเพื่อนตัวน้อย</h1><p class="muted small">น้องจะโตขึ้นทุกครั้งที่เธอดูแลตัวเอง เลือกสีขนได้หนึ่งแบบ แบบอื่นซื้อเพิ่มทีหลังได้</p></div>
-   <div class="skins">${Object.entries(SKINS).map(([k,v])=>`<button class="skin ${OB.skin===k?'on':''}" data-act="obSkin" data-v="${k}" aria-pressed="${OB.skin===k}">${catSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:k}})}<span>${v.name}</span></button>`).join('')}</div>
+  else body=`${dots}<div><div class="eyebrow">ขั้นที่ 3 จาก 3</div><h1>เลือกเพื่อนตัวน้อย</h1><p class="muted small">น้องจะโตขึ้นทุกครั้งที่เธอดูแลตัวเอง เลือกชนิดกับสีขนได้หนึ่งแบบ เปลี่ยนชนิดทีหลังได้ฟรี สีอื่นซื้อเพิ่มได้</p></div>
+   <div class="seg-ctl" role="group" aria-label="ชนิดสัตว์">${Object.entries(KINDS).map(([k,v])=>`<button type="button" class="${OB.kind===k?'on':''}" data-act="obKind" data-v="${k}" aria-pressed="${OB.kind===k}">${v.label}</button>`).join('')}</div>
+   <div class="skins">${Object.entries(skinsOf(OB.kind)).map(([k,v])=>`<button class="skin ${OB.skin===k?'on':''}" data-act="obSkin" data-v="${k}" aria-pressed="${OB.skin===k}">${petSVG({kind:OB.kind,lv:1,md:'happy',eq:{head:null,face:null,skin:k}})}<span>${v.name}</span></button>`).join('')}</div>
    <label class="field" for="oName">ตั้งชื่อน้อง<input id="oName" type="text" maxlength="16" value="${esc(OB.name)}"></label>
    <div class="obnav"><button class="btn ghost" data-act="ob" data-v="2">ย้อนกลับ</button><button class="btn" data-act="obDone">เริ่มเลย</button></div>`;
   el.innerHTML=`<div class="ob-in">${body}</div>`;
@@ -857,7 +893,7 @@ function slotLabel(k){
 function slotPreview(k){
   const src=imgSrc(k); if(src) return `<img src="${src}" alt="">`;
   if(k.startsWith('ex_')){const fig=Object.keys(FIGFILE).find(x=>FIGFILE[x]===k);return figSVG(fig)}
-  if(k==='hero_welcome') return catSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}});
+  if(k==='hero_welcome') return petSVG({lv:1,md:'happy',eq:{head:null,face:null,skin:'orange'}});
   if(k==='boss_lazy') return bossSVG;
   if(k==='celebrate') return `<span class="fart" style="--s:56px;color:var(--sun)">${IC.star}</span>`;
   return foodImg(k,64);
@@ -1134,15 +1170,18 @@ document.addEventListener('click',e=>{
      if(!(k>=1000)){err.textContent='เป้าแคลอรีควรไม่ต่ำกว่า 1,000 kcal เพื่อความปลอดภัย';break}
      OB.t={...OB.t,kcal:Math.round(k),protein:Math.round(gv('oP'))||OB.t.protein,water:Math.max(1,Math.round(gv('oWa'))||OB.t.water)}; OB.wpw=Math.max(1,Math.min(7,Math.round(gv('oWpw'))||3)); showOB(3); break;}
    case 'obPace': document.getElementById('oK').value=b.dataset.v; obGuide(); break;
+   case 'obKind': OB.kind=b.dataset.v; OB.name=document.getElementById('oName').value; drawOB(); break;
    case 'obSkin': OB.skin=b.dataset.v; OB.name=document.getElementById('oName').value; drawOB(); break;
    case 'obDone':{
      const name=document.getElementById('oName').value.trim()||'ข้าวปั้น';
      const prof={...OB.p,...DEF_GOALS,kcal:OB.t.kcal,protein:OB.t.protein,water:OB.t.water,wpw:OB.wpw||3,accent:S.profile.accent||'leaf'};
-     S=blankState(prof,{name,owned:[OB.skin],equip:{head:null,face:null,skin:OB.skin}});
+     S=blankState(prof,{name,kind:OB.kind,owned:[OB.skin],equip:{head:null,face:null,skin:OB.skin}});
      S.weights=[{d:dk(),kg:OB.p.weight}]; day(dk()).weighed=true;
      save(); CUR=dk(); TAB='today'; hideOB(); render(true); OB=null;
      toast(`ยินดีต้อนรับ! ${name} พร้อมแล้ว`,5); burst(innerWidth/2,innerHeight/3,44); break;}
-   case 'rename': openSheet('ตั้งชื่อน้องแมว',`<label class="field" for="petN">ชื่อ<input id="petN" type="text" maxlength="16" value="${esc(S.pet.name)}"></label><button class="btn" data-act="saveName">บันทึก</button>`); break;
+   case 'kindSheet': openSheet('เปลี่ยนชนิดสัตว์',`<p class="small muted">เลเวล เหรียญ และของแต่งตัวยังอยู่ครบ เปลี่ยนกลับเมื่อไหร่ก็ได้</p><div class="skins kinds">${Object.entries(KINDS).map(([k,v])=>`<button class="skin ${petKind()===k?'on':''}" data-act="setKind" data-v="${k}" aria-pressed="${petKind()===k}">${petSVG({kind:k,md:'happy'})}<span>${v.label}</span></button>`).join('')}</div>`); break;
+   case 'setKind':{const k=b.dataset.v; closeSheet(); if(k!==petKind())act(()=>S.pet.kind=k,`เปลี่ยนเป็นน้อง${KINDS[k].w}แล้ว`,{quiet:1}); break}
+   case 'rename': openSheet('ตั้งชื่อน้อง'+petWord(),`<label class="field" for="petN">ชื่อ<input id="petN" type="text" maxlength="16" value="${esc(S.pet.name)}"></label><button class="btn" data-act="saveName">บันทึก</button>`); break;
    case 'saveName':{const n=document.getElementById('petN').value.trim();if(n){act(()=>S.pet.name=n,'เปลี่ยนชื่อแล้ว');closeSheet()}break}
    case 'petTap':{
      b.classList.remove('jump');void b.offsetWidth;b.classList.add('jump');const r=b.getBoundingClientRect();heart(r.left+r.width/2,r.top+r.height*.3);setTimeout(()=>heart(r.left+r.width/2+16,r.top+r.height*.3),140);
@@ -1150,9 +1189,9 @@ document.addEventListener('click',e=>{
      break;}
    case 'buy':{const it=SHOP.find(x=>x.id===b.dataset.id);
      if(coins()<it.price){toast(`ยังขาดอีก ${it.price-coins()} เหรียญ ทำภารกิจเพิ่มนะ`);break}
-     act(()=>{S.pet.spent+=it.price;S.pet.owned.push(it.id);if(it.slot==='skin')S.pet.equip.skin=it.id;else S.pet.equip[it.slot]=it.id},`ได้${it.name}แล้ว`);burst(...lastXY,24);break}
+     act(()=>{S.pet.spent+=it.price;S.pet.owned.push(it.id);if(it.slot==='skin')S.pet.equip.skin=it.id;else S.pet.equip[it.slot]=it.id},`ได้${itemName(it)}แล้ว`);burst(...lastXY,24);break}
    case 'equip':{const it=SHOP.find(x=>x.id===b.dataset.id);
-     act(()=>{const eq=S.pet.equip;if(it.slot==='skin')eq.skin=eq.skin===it.id?(S.pet.owned.find(o=>SKINS[o]&&o!==it.id)||'orange'):it.id;else eq[it.slot]=eq[it.slot]===it.id?null:it.id},'เปลี่ยนชุดแล้ว');break}
+     act(()=>{const eq=S.pet.equip;if(it.slot==='skin')eq.skin=eq.skin===it.id?(S.pet.owned.find(o=>SKINS.cat[o]&&o!==it.id)||'orange'):it.id;else eq[it.slot]=eq[it.slot]===it.id?null:it.id},'เปลี่ยนชุดแล้ว');break}
    case 'session': sessionSheet(); break;
    case 'mini': timedSheet('mini'); break;
    case 'stretch': timedSheet('stretch'); break;
