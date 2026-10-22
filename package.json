@@ -1,0 +1,18 @@
+{
+  "name": "pawfit",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "images": "node scripts/build-images.mjs",
+    "icons": "node scripts/build-icons.mjs",
+    "dev": "npm run images && vite",
+    "build": "npm run images && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "sharp": "^0.33.5",
+    "vite": "^5.4.10",
+    "vite-plugin-pwa": "^0.20.5"
+  }
+}
